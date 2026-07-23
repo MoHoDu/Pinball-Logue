@@ -1,27 +1,47 @@
-name: Deploy to GitHub Pages
+name: Godot 4.7 Web Deploy to GitHub Pages
+
 on:
   push:
     branches:
-      - deploy
+      - deploy # deploy 브랜치에 푸시될 때만 실행
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: npm run install
+      - name: Export Godot Web Game
+        uses: firebellys/godot-export@v5.2.1
+        with:
+          # Godot 4.7 버전에 맞는 다운로드 링크 (x.x.x-stable 부분을 사용하시는 정확한 버전으로 맞추세요)
+          godot_executable_download_url: https://github.com/godotengine/godot/releases/download/4.7.1-stable/Godot_v4.7-stable_linux.x86_64.zip
+          godot_export_templates_download_url: https://github.com/godotengine/godot/releases/download/4.7-stable/Godot_v4.7-stable_export_templates.tpz
+          relative_project_path: ./ # project.godot 파일이 위치한 폴더
+          archive_output: false
+          export_debug: false
+          use_preset_export_path: false
+          export_preset_name: "Web" # Godot 내보내기 창에서 설정한 프리셋 이름과 완벽히 동일해야 함
+          export_path: ./build/index.html
 
-      - name: Run Lint
-        run: npm run lint
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v4
 
-      - name: Run build
-        run: npm run build
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./build
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          personal_token: ${{ secrets.ACCESS_TOKEN }}
-          publish_dir: dist
+        id: deployment
+        uses: actions/deploy-pages@v4
