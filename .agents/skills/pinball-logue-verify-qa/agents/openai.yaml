@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pinball Logue 전문 QA"
+  short_description: "수용 기준에 따라 독립 검증하고 증거와 버그를 기록합니다"
+  default_prompt: "Use $pinball-logue-verify-qa to independently verify this Pinball Logue change."

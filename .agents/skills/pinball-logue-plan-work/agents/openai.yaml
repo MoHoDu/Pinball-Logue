@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pinball Logue 작업 계획"
+  short_description: "승인 중심의 기능 작업 계획과 문서 갱신을 진행합니다"
+  default_prompt: "Use $pinball-logue-plan-work to plan this Pinball Logue task with approval gates."
