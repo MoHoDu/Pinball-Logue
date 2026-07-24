@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="BallPhysicsData" format=3 uid="uid://bkk4l5n6uu02c"]
+
+[ext_resource type="Script" uid="uid://b6juciu446hn4" path="res://scripts/ball/ball_physics_data.gd" id="1_sxuue"]
+
+[resource]
+script = ExtResource("1_sxuue")
+metadata/_custom_type_script = "uid://b6juciu446hn4"
