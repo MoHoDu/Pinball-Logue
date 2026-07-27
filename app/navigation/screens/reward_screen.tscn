@@ -13,7 +13,7 @@ grow_vertical = 2
 theme = ExtResource("2_theme")
 script = ExtResource("1_screen")
 screen_id = &"reward"
-next_screen_id = &"boss"
+progression_action = &"reward_completed"
 next_button_path = NodePath("Content/NextButton")
 
 [node name="Background" type="ColorRect" parent="."]
@@ -53,4 +53,4 @@ horizontal_alignment = 1
 
 [node name="NextButton" type="Button" parent="Content"]
 layout_mode = 2
-text = "보스 화면 열기"
+text = "보상 구매 완료"

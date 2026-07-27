@@ -1,5 +1,4 @@
-@tool
-extends EditorScript
+extends SceneTree
 
 const SCREEN_SCENES: Array[Dictionary] = [
 	{
@@ -15,7 +14,7 @@ const SCREEN_SCENES: Array[Dictionary] = [
 	{
 		"id": &"wave",
 		"path": "res://app/navigation/screens/wave_screen.tscn",
-		"root_type": "Node3D",
+		"root_type": "Node2D",
 	},
 	{
 		"id": &"reward",
@@ -25,7 +24,7 @@ const SCREEN_SCENES: Array[Dictionary] = [
 	{
 		"id": &"boss",
 		"path": "res://app/navigation/screens/boss_screen.tscn",
-		"root_type": "Node3D",
+		"root_type": "Node2D",
 	},
 	{
 		"id": &"results",
@@ -35,7 +34,13 @@ const SCREEN_SCENES: Array[Dictionary] = [
 ]
 
 const NAVIGATION_CONFIG_PATH := "res://app/navigation/default_navigation_config.tres"
+const PROGRESSION_CONFIG_PATH := "res://game_flow/default_progression_config.tres"
+const BOARD_VIEW_CONFIG_PATH := "res://stages/boards/default_board_view_config.tres"
 const APP_ROOT_PATH := "res://app/bootstrap/app_root.tscn"
+
+
+func _init() -> void:
+	call_deferred("_run")
 
 
 func _run() -> void:
@@ -78,6 +83,9 @@ func _run() -> void:
 	else:
 		failures.append_array(navigation_config.get_validation_errors())
 		_expect_route_coverage(navigation_config, expected_ids, failures)
+
+	_expect_progression_config(failures)
+	_expect_board_view_config(failures)
 
 	var app_root_scene := ResourceLoader.load(
 		APP_ROOT_PATH,
@@ -122,5 +130,49 @@ func _expect_route_coverage(
 			failures.append("정의되지 않은 추가 화면 경로가 있습니다: %s" % actual_id)
 
 
+func _expect_progression_config(failures: PackedStringArray) -> void:
+	var config := ResourceLoader.load(
+		PROGRESSION_CONFIG_PATH,
+		"Resource",
+		ResourceLoader.CACHE_MODE_IGNORE
+	) as ProgressionConfig
+	if config == null:
+		failures.append("기본 ProgressionConfig를 불러오지 못했습니다.")
+		return
+	if not config.get_validation_error().is_empty():
+		failures.append(config.get_validation_error())
+	if config.stage_count != 3 or config.normal_wave_count != 3:
+		failures.append("기본 진행 설정은 스테이지 3개와 일반 웨이브 3개여야 합니다.")
+
+
+func _expect_board_view_config(failures: PackedStringArray) -> void:
+	var config := ResourceLoader.load(
+		BOARD_VIEW_CONFIG_PATH,
+		"Resource",
+		ResourceLoader.CACHE_MODE_IGNORE
+	) as BoardViewConfig
+	if config == null:
+		failures.append("기본 BoardViewConfig를 불러오지 못했습니다.")
+		return
+	failures.append_array(config.get_validation_errors())
+	if not is_equal_approx(config.view_angle_degrees, 58.0):
+		failures.append("기본 보드 시점 각도는 58도여야 합니다.")
+
+	var default_polygon := config.get_board_polygon()
+	var top_width := default_polygon[1].x - default_polygon[0].x
+	var bottom_width := default_polygon[2].x - default_polygon[3].x
+	if top_width >= bottom_width:
+		failures.append("2D 목업 보드는 위쪽이 아래쪽보다 좁은 원근 사다리꼴이어야 합니다.")
+
+	var shallow_config := BoardViewConfig.new()
+	shallow_config.view_angle_degrees = 30.0
+	var steep_config := BoardViewConfig.new()
+	steep_config.view_angle_degrees = 75.0
+	if shallow_config.get_top_width_ratio() >= steep_config.get_top_width_ratio():
+		failures.append("보드 시점 각도 변경이 위쪽 폭 원근에 반영되지 않습니다.")
+	if shallow_config.get_vertical_scale() >= steep_config.get_vertical_scale():
+		failures.append("보드 시점 각도 변경이 세로 압축에 반영되지 않습니다.")
+
+
 func _quit_editor(exit_code: int) -> void:
-	get_editor_interface().get_base_control().get_tree().quit(exit_code)
+	quit(exit_code)

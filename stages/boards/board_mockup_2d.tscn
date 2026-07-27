@@ -1,0 +1,8 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://stages/boards/board_mockup_2d.gd" id="1_mockup"]
+[ext_resource type="Resource" path="res://stages/boards/default_board_view_config.tres" id="2_config"]
+
+[node name="BoardMockup2D" type="Node2D"]
+script = ExtResource("1_mockup")
+config = ExtResource("2_config")

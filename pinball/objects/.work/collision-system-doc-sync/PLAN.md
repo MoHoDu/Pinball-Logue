@@ -25,7 +25,7 @@ read_when:
 - `GAME_TERMS.md`: 접촉, 타격, 지속 접촉, 효과 제어와 분리의 표준 정의를 추가한다.
 - `pinball/objects/.work/collision-system-doc-sync/PLAN.md`: 승인 상태와 사용자 피드백을 기록한다.
 - `pinball/objects/AGENTS.md`, `pinball/ball/AGENTS.md`, `pinball/flippers/AGENTS.md`, `pinball/scoring/AGENTS.md`: 책임 경계 대조 대상으로만 사용하며 현재 규칙과 충돌하지 않으면 수정하지 않는다.
-- 기존 사용자 변경인 `example_2d.tscn`은 읽거나 수정하지 않는다.
+- 이전 임시 시작 씬 `example_2d.tscn`은 2026-07-28 사용자 요청으로 삭제됐으므로 이 작업의 대상에 포함하지 않는다.
 
 ## 단계와 단계별 검증
 

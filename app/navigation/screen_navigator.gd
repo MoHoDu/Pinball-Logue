@@ -4,6 +4,7 @@ extends Node
 signal transition_started(previous_screen_id: StringName, target_screen_id: StringName)
 signal transition_completed(current_screen_id: StringName)
 signal transition_rejected(target_screen_id: StringName, reason: String)
+signal progression_action_requested(action_id: StringName)
 
 @export var config: NavigationConfig
 @export_node_path("Node") var screen_host_path: NodePath
@@ -80,15 +81,15 @@ func get_active_screen_count() -> int:
 
 
 func _connect_screen_intents(screen: Node) -> void:
-	if screen.has_signal(&"navigation_requested"):
+	if screen.has_signal(&"progression_requested"):
 		screen.connect(
-			&"navigation_requested",
-			Callable(self, "_on_navigation_requested")
+			&"progression_requested",
+			Callable(self, "_on_progression_requested")
 		)
 
 
-func _on_navigation_requested(target_screen_id: StringName) -> void:
-	request_navigation(target_screen_id)
+func _on_progression_requested(action_id: StringName) -> void:
+	progression_action_requested.emit(action_id)
 
 
 func _reject(target_screen_id: StringName, reason: String) -> bool:

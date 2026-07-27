@@ -1,10 +1,10 @@
 class_name NavigableScreen
 extends Node
 
-signal navigation_requested(target_screen_id: StringName)
+signal progression_requested(action_id: StringName)
 
 @export var screen_id: StringName
-@export var next_screen_id: StringName
+@export var progression_action: StringName
 @export_node_path("Button") var next_button_path: NodePath
 
 
@@ -17,6 +17,6 @@ func _ready() -> void:
 
 
 func _on_next_button_pressed() -> void:
-	if next_screen_id == &"":
+	if progression_action == &"":
 		return
-	navigation_requested.emit(next_screen_id)
+	progression_requested.emit(progression_action)

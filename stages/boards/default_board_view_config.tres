@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BoardViewConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://stages/boards/board_view_config.gd" id="1_config"]
+
+[resource]
+script = ExtResource("1_config")
+view_angle_degrees = 58.0
+board_size = Vector2(540, 500)
+rail_width = 18.0
+board_color = Color(0.156863, 0.298039, 0.270588, 1)
+rail_color = Color(0.560784, 0.333333, 0.184314, 1)
+lane_color = Color(0.309804, 0.552941, 0.490196, 1)
+bumper_color = Color(0.890196, 0.776471, 0.372549, 1)
+accent_color = Color(0.85098, 0.294118, 0.239216, 1)

@@ -13,7 +13,7 @@ grow_vertical = 2
 theme = ExtResource("2_theme")
 script = ExtResource("1_screen")
 screen_id = &"results"
-next_screen_id = &"main_lobby"
+progression_action = &"continue_from_result"
 next_button_path = NodePath("Content/NextButton")
 
 [node name="Background" type="ColorRect" parent="."]
@@ -48,9 +48,9 @@ horizontal_alignment = 1
 
 [node name="Description" type="Label" parent="Content"]
 layout_mode = 2
-text = "클리어·실패·리트라이는 후속 진행 단계에서 연결"
+text = "클리어 시 다음 스테이지, 실패 시 같은 스테이지를 리트라이"
 horizontal_alignment = 1
 
 [node name="NextButton" type="Button" parent="Content"]
 layout_mode = 2
-text = "메인 로비로 돌아가기"
+text = "계속 진행"

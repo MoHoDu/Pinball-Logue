@@ -55,7 +55,7 @@ func _run() -> void:
 			)
 
 			if target_screen_id in [SCREEN_IDS.WAVE, SCREEN_IDS.BOSS]:
-				_expect(navigator.current_screen is Node3D, "%s 화면은 Node3D 루트여야 합니다." % target_screen_id)
+				_expect(navigator.current_screen is Node2D, "%s 화면은 Node2D 목업 루트여야 합니다." % target_screen_id)
 			else:
 				_expect(navigator.current_screen is Control, "%s 화면은 Control 루트여야 합니다." % target_screen_id)
 

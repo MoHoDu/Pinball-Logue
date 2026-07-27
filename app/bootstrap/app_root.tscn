@@ -1,16 +1,18 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene format=3 uid="uid://bv2iorneeuumi"]
 
-[ext_resource type="Script" path="res://app/bootstrap/app_root.gd" id="1_root"]
-[ext_resource type="Script" path="res://app/navigation/screen_navigator.gd" id="2_navigator"]
+[ext_resource type="Script" uid="uid://14jrk2n0ybpa" path="res://app/bootstrap/app_root.gd" id="1_root"]
+[ext_resource type="Script" uid="uid://d0qubevsvv8s3" path="res://app/navigation/screen_navigator.gd" id="2_navigator"]
 [ext_resource type="Resource" path="res://app/navigation/default_navigation_config.tres" id="3_config"]
+[ext_resource type="Resource" path="res://game_flow/default_progression_config.tres" id="4_progression"]
 
-[node name="AppRoot" type="Node"]
+[node name="AppRoot" type="Node" unique_id=445266081]
 script = ExtResource("1_root")
 navigator_path = NodePath("ScreenNavigator")
+progression_config = ExtResource("4_progression")
 
-[node name="ScreenHost" type="Node" parent="."]
+[node name="ScreenHost" type="Node" parent="." unique_id=1884975412]
 
-[node name="ScreenNavigator" type="Node" parent="."]
+[node name="ScreenNavigator" type="Node" parent="." unique_id=1643233462]
 script = ExtResource("2_navigator")
 config = ExtResource("3_config")
 screen_host_path = NodePath("../ScreenHost")
