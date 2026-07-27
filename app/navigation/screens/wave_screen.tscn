@@ -1,0 +1,66 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://app/navigation/navigable_screen.gd" id="1_screen"]
+[ext_resource type="Theme" path="res://ui/components/theme/app_theme.tres" id="2_theme"]
+
+[sub_resource type="StandardMaterial3D" id="Material_board"]
+albedo_color = Color(0.16, 0.2, 0.27, 1)
+roughness = 0.82
+
+[sub_resource type="BoxMesh" id="Mesh_board"]
+material = SubResource("Material_board")
+size = Vector3(8, 0.4, 11)
+
+[sub_resource type="StandardMaterial3D" id="Material_marker"]
+albedo_color = Color(0.2, 0.68, 1, 1)
+metallic = 0.25
+
+[sub_resource type="SphereMesh" id="Mesh_marker"]
+material = SubResource("Material_marker")
+radius = 0.55
+height = 1.1
+
+[node name="WaveScreen" type="Node3D"]
+script = ExtResource("1_screen")
+screen_id = &"wave"
+next_screen_id = &"reward"
+next_button_path = NodePath("Overlay/Content/NextButton")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+position = Vector3(0, 8, 10)
+rotation_degrees = Vector3(-35, 0, 0)
+current = true
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-55, -25, 0)
+shadow_enabled = true
+
+[node name="BoardPlaceholder" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_board")
+
+[node name="BallPlaceholder" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.75, 1.5)
+mesh = SubResource("Mesh_marker")
+
+[node name="Overlay" type="CanvasLayer" parent="."]
+
+[node name="Content" type="VBoxContainer" parent="Overlay"]
+offset_left = 32.0
+offset_top = 32.0
+offset_right = 430.0
+offset_bottom = 160.0
+theme = ExtResource("2_theme")
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="Overlay/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "웨이브 · 3D 플레이 공간"
+
+[node name="Description" type="Label" parent="Overlay/Content"]
+layout_mode = 2
+text = "보드 조립과 핀볼 물리는 후속 단계에서 연결"
+
+[node name="NextButton" type="Button" parent="Overlay/Content"]
+layout_mode = 2
+text = "보상 화면 열기"

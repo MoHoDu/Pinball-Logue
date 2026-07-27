@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="NavigationConfig" load_steps=15 format=3]
+
+[ext_resource type="Script" path="res://app/navigation/navigation_config.gd" id="1_config"]
+[ext_resource type="Script" path="res://app/navigation/screen_route.gd" id="2_route"]
+[ext_resource type="PackedScene" path="res://app/navigation/screens/main_lobby_screen.tscn" id="3_main"]
+[ext_resource type="PackedScene" path="res://app/navigation/screens/stage_selection_screen.tscn" id="4_stage"]
+[ext_resource type="PackedScene" path="res://app/navigation/screens/wave_screen.tscn" id="5_wave"]
+[ext_resource type="PackedScene" path="res://app/navigation/screens/reward_screen.tscn" id="6_reward"]
+[ext_resource type="PackedScene" path="res://app/navigation/screens/boss_screen.tscn" id="7_boss"]
+[ext_resource type="PackedScene" path="res://app/navigation/screens/results_screen.tscn" id="8_results"]
+
+[sub_resource type="Resource" id="ScreenRoute_main"]
+script = ExtResource("2_route")
+screen_id = &"main_lobby"
+scene = ExtResource("3_main")
+
+[sub_resource type="Resource" id="ScreenRoute_stage"]
+script = ExtResource("2_route")
+screen_id = &"stage_selection"
+scene = ExtResource("4_stage")
+
+[sub_resource type="Resource" id="ScreenRoute_wave"]
+script = ExtResource("2_route")
+screen_id = &"wave"
+scene = ExtResource("5_wave")
+
+[sub_resource type="Resource" id="ScreenRoute_reward"]
+script = ExtResource("2_route")
+screen_id = &"reward"
+scene = ExtResource("6_reward")
+
+[sub_resource type="Resource" id="ScreenRoute_boss"]
+script = ExtResource("2_route")
+screen_id = &"boss"
+scene = ExtResource("7_boss")
+
+[sub_resource type="Resource" id="ScreenRoute_results"]
+script = ExtResource("2_route")
+screen_id = &"results"
+scene = ExtResource("8_results")
+
+[resource]
+script = ExtResource("1_config")
+initial_screen_id = &"main_lobby"
+routes = Array[ExtResource("2_route")]([SubResource("ScreenRoute_main"), SubResource("ScreenRoute_stage"), SubResource("ScreenRoute_wave"), SubResource("ScreenRoute_reward"), SubResource("ScreenRoute_boss"), SubResource("ScreenRoute_results")])

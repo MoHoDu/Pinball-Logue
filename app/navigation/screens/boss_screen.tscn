@@ -1,0 +1,67 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://app/navigation/navigable_screen.gd" id="1_screen"]
+[ext_resource type="Theme" path="res://ui/components/theme/app_theme.tres" id="2_theme"]
+
+[sub_resource type="StandardMaterial3D" id="Material_board"]
+albedo_color = Color(0.22, 0.12, 0.13, 1)
+roughness = 0.82
+
+[sub_resource type="BoxMesh" id="Mesh_board"]
+material = SubResource("Material_board")
+size = Vector3(8, 0.4, 11)
+
+[sub_resource type="StandardMaterial3D" id="Material_boss"]
+albedo_color = Color(0.92, 0.2, 0.12, 1)
+metallic = 0.4
+
+[sub_resource type="CylinderMesh" id="Mesh_boss"]
+material = SubResource("Material_boss")
+top_radius = 1.2
+bottom_radius = 1.6
+height = 1.4
+
+[node name="BossScreen" type="Node3D"]
+script = ExtResource("1_screen")
+screen_id = &"boss"
+next_screen_id = &"results"
+next_button_path = NodePath("Overlay/Content/NextButton")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+position = Vector3(0, 8, 10)
+rotation_degrees = Vector3(-35, 0, 0)
+current = true
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-55, -25, 0)
+shadow_enabled = true
+
+[node name="BoardPlaceholder" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_board")
+
+[node name="BossPlaceholder" type="MeshInstance3D" parent="."]
+position = Vector3(0, 1, -2.6)
+mesh = SubResource("Mesh_boss")
+
+[node name="Overlay" type="CanvasLayer" parent="."]
+
+[node name="Content" type="VBoxContainer" parent="Overlay"]
+offset_left = 32.0
+offset_top = 32.0
+offset_right = 430.0
+offset_bottom = 160.0
+theme = ExtResource("2_theme")
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="Overlay/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "보스 · 3D 플레이 공간"
+
+[node name="Description" type="Label" parent="Overlay/Content"]
+layout_mode = 2
+text = "보스 규칙과 타격 판정은 후속 단계에서 연결"
+
+[node name="NextButton" type="Button" parent="Overlay/Content"]
+layout_mode = 2
+text = "결과 화면 열기"
