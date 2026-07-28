@@ -36,6 +36,7 @@ const SCREEN_SCENES: Array[Dictionary] = [
 const NAVIGATION_CONFIG_PATH := "res://app/navigation/default_navigation_config.tres"
 const PROGRESSION_CONFIG_PATH := "res://game_flow/default_progression_config.tres"
 const BOARD_VIEW_CONFIG_PATH := "res://stages/boards/default_board_view_config.tres"
+const BOARD_LAYOUT_CONFIG_PATH := "res://stages/boards/default_board_layout_config.tres"
 const APP_ROOT_PATH := "res://app/bootstrap/app_root.tscn"
 
 
@@ -85,7 +86,7 @@ func _run() -> void:
 		_expect_route_coverage(navigation_config, expected_ids, failures)
 
 	_expect_progression_config(failures)
-	_expect_board_view_config(failures)
+	_expect_board_configs(failures)
 
 	var app_root_scene := ResourceLoader.load(
 		APP_ROOT_PATH,
@@ -145,24 +146,37 @@ func _expect_progression_config(failures: PackedStringArray) -> void:
 		failures.append("기본 진행 설정은 스테이지 3개와 일반 웨이브 3개여야 합니다.")
 
 
-func _expect_board_view_config(failures: PackedStringArray) -> void:
-	var config := ResourceLoader.load(
+func _expect_board_configs(failures: PackedStringArray) -> void:
+	var view_config := ResourceLoader.load(
 		BOARD_VIEW_CONFIG_PATH,
 		"Resource",
 		ResourceLoader.CACHE_MODE_IGNORE
 	) as BoardViewConfig
-	if config == null:
+	var layout_config := ResourceLoader.load(
+		BOARD_LAYOUT_CONFIG_PATH,
+		"Resource",
+		ResourceLoader.CACHE_MODE_IGNORE
+	) as BoardLayoutConfig
+	if view_config == null:
 		failures.append("기본 BoardViewConfig를 불러오지 못했습니다.")
+	if layout_config == null:
+		failures.append("기본 BoardLayoutConfig를 불러오지 못했습니다.")
+	if view_config == null or layout_config == null:
 		return
-	failures.append_array(config.get_validation_errors())
-	if not is_equal_approx(config.view_angle_degrees, 58.0):
+	failures.append_array(view_config.get_validation_errors())
+	failures.append_array(layout_config.get_validation_errors())
+	if not is_equal_approx(view_config.view_angle_degrees, 58.0):
 		failures.append("기본 보드 시점 각도는 58도여야 합니다.")
 
-	var default_polygon := config.get_board_polygon()
+	var default_polygon := view_config.project_board_polygon(layout_config.boundary_points)
 	var top_width := default_polygon[1].x - default_polygon[0].x
 	var bottom_width := default_polygon[2].x - default_polygon[3].x
 	if top_width >= bottom_width:
 		failures.append("2D 목업 보드는 위쪽이 아래쪽보다 좁은 원근 사다리꼴이어야 합니다.")
+	if layout_config.get_closed_boundary_points().size() != layout_config.boundary_points.size() + 1:
+		failures.append("보드 경계가 마지막 꼭짓점에서 첫 꼭짓점으로 폐합되지 않습니다.")
+	if not layout_config.has_launch_to_drain_path():
+		failures.append("기본 발사점에서 드레인까지 데이터 경로가 없습니다.")
 
 	var shallow_config := BoardViewConfig.new()
 	shallow_config.view_angle_degrees = 30.0
