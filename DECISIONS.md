@@ -34,3 +34,15 @@ read_when:
 - 갱신 문서: `AGENTS.md`, `GAME_TERMS.md`, `GROUND_RULES.md`, `app/SPEC.md`, `game_flow/SPEC.md`, `integration/.work/basic-system-foundation/PLAN.md`
 - 검증 기준: 기본 `.tres` 로드, 보드 각도 변경 시 2D 목업 형상 변화, 웨이브 수 변경 시 보스 진입 시점 변화, 도메인·보드 데이터의 2D·3D 노드 비의존, Godot 프로젝트·Desktop 실행
 - 승인 기록: 2026-07-28 사용자가 첨부 핀볼 레퍼런스와 함께 다섯 변경 사항을 명시하고 현재 구현과 후속 단계 계획에 적용하도록 요청함.
+
+## DEC-20260728-03 — 기획자용 보드 제작 도구와 배치 계층 분리
+
+- 상태: approved
+- 요청자: 사용자
+- 변경 전: 기획자는 `.tres` 인스펙터 배열에서 보드 외곽선과 앵커 좌표를 직접 입력하며, 배치 지점과 실제 오브젝트 원형이 연결되지 않았다. 보드 목업은 범퍼·플리퍼·유물 슬롯과 공을 코드로 직접 그렸다.
+- 변경 후: 기획자는 Godot 2D 제작 화면에서 보드 외곽선 정점, 배치 지점과 플리퍼를 마우스로 이동한다. 보드 템플릿은 외곽선과 빈 배치 지점을, 웨이브 배치는 지점과 오브젝트 원형의 연결을, 각 기능은 범퍼·플리퍼·유물 원형을 소유한다. 오브젝트 원형의 규칙 데이터와 현재 2D 디자인·미래 3D 디자인을 분리한다. 플리퍼는 웨이브마다 1~4개를 외곽선에 부착한다. 공은 보드 설정과 편집 미리보기에서 제외하고 발사 지점만 남긴다.
+- 변경 이유: Godot·GDScript·좌표 체계를 모르는 비개발자도 보드를 복제하고 마우스로 구성하며, 같은 보드 형태에 서로 다른 웨이브 콘텐츠와 디자인을 안전하게 적용할 수 있게 하기 위해서다.
+- 영향받는 기능: `stages/boards`, `stages/waves`, `pinball/objects`, `pinball/flippers`, `relics/catalog`, `integration`, Godot 편집기 플러그인
+- 갱신 문서: `GAME_TERMS.md`, `stages/boards/SPEC.md`, `stages/waves/SPEC.md`, `pinball/objects/SPEC.md`, `pinball/flippers/SPEC.md`, `relics/catalog/SPEC.md`, `integration/.work/basic-system-foundation/PLAN.md`, `integration/.work/basic-system-foundation/QA.md`
+- 검증 기준: GDScript·파일 직접 편집·좌표 계산 없이 보드 복제→외곽선 편집→지점 추가·이동→원형 지정·교체→플리퍼 1~4개 외곽선 이동→저장·실행 확인, Undo/Redo, 한국어 오류 안내, 공 참조 부재, 차원 독립 계약, 기존 진행 회귀
+- 승인 기록: 2026-07-28 사용자가 여덟 가지 제작 요구를 제시하고 3B-1~7 전체 구현, 서브 에이전트 활용, 독립 QA와 지정 Confluence 가이드 갱신을 승인함.
