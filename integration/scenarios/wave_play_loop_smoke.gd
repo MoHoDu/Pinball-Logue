@@ -24,23 +24,40 @@ func _run() -> void:
 		_expect(screen.get_shot_phase() == ShotPhases.AIMING, "Space로 공 선택을 확정하지 못했습니다.")
 		_expect(screen.has_active_ball(), "조준 상태에 선택한 공이 준비되지 않았습니다.")
 		var aim_guide := screen.get_node("PlayableBoard2D/AimGuide") as Line2D
+		var strength_label := screen.get_node("Overlay/RightPanel/Content/Strength") as Label
 		_expect(aim_guide.visible, "공 조준 상태에서 조준선이 표시되지 않았습니다.")
 		_expect(aim_guide.points.size() == 2, "조준선 시작·끝 지점이 준비되지 않았습니다.")
 		if expected_remaining == 2:
-			screen._aim_strength = 0.25
+			screen._aim_strength = 0.0
 			screen._refresh_hud()
-			var low_strength_guide_length := _get_board_line_length(aim_guide, board)
-			screen._aim_strength = 0.75
+			_expect(
+				is_equal_approx(_get_board_line_length(aim_guide, board), 0.112),
+				"최소 실제 속도가 조준선 길이에 반영되지 않았습니다."
+			)
+			_expect("40% · 최소" in strength_label.text, "최소 실제 속도 표시가 40%가 아닙니다.")
+			screen._aim_strength = 0.5
 			screen._refresh_hud()
-			var high_strength_guide_length := _get_board_line_length(aim_guide, board)
 			_expect(
-				high_strength_guide_length > low_strength_guide_length,
-				"발사 세기를 높여도 조준선이 길어지지 않았습니다."
+				is_equal_approx(_get_board_line_length(aim_guide, board), 0.196),
+				"중간 실제 속도가 조준선 길이에 반영되지 않았습니다."
 			)
+			_expect("70%" in strength_label.text, "중간 실제 속도 표시가 70%가 아닙니다.")
+			screen._aim_strength = 1.0
+			screen._refresh_hud()
 			_expect(
-				is_equal_approx(high_strength_guide_length, low_strength_guide_length * 3.0),
-				"조준선 길이가 발사 세기에 비례하지 않았습니다."
+				is_equal_approx(_get_board_line_length(aim_guide, board), 0.28),
+				"최대 실제 속도가 조준선 최대 길이에 반영되지 않았습니다."
 			)
+			_expect("100% · 최대" in strength_label.text, "최대 실제 속도 표시가 100%가 아닙니다.")
+			var original_maximum_speed := screen.launch_config.maximum_speed_board_per_second
+			screen.launch_config.maximum_speed_board_per_second = 4.0
+			screen._refresh_hud()
+			_expect(
+				is_equal_approx(_get_board_line_length(aim_guide, board), 0.21),
+				"공 최대 속도 제한이 조준선 길이에 반영되지 않았습니다."
+			)
+			_expect("75% · 공 최대" in strength_label.text, "공 최대 속도 제한 표시가 75%가 아닙니다.")
+			screen.launch_config.maximum_speed_board_per_second = original_maximum_speed
 			screen._aim_strength = screen.launch_config.default_strength
 			screen._refresh_hud()
 		var aim_label := screen.get_node("Overlay/RightPanel/Content/Aim") as Label

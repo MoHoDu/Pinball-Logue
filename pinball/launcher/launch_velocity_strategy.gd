@@ -41,15 +41,27 @@ func calculate(
 	solution.board_direction = forward.rotated(deg_to_rad(resolved_angle_degrees)).normalized()
 	solution.normalized_strength = config.clamp_strength(command.normalized_strength)
 	var requested_speed := config.get_speed_for_strength(solution.normalized_strength)
-	solution.speed_board_per_second = minf(
-		requested_speed,
-		physics_profile.max_linear_speed_board_per_second
+	solution.speed_board_per_second = calculate_speed_board_per_second(
+		config, physics_profile, solution.normalized_strength
 	)
 	solution.speed_was_clamped = solution.speed_board_per_second < requested_speed
 	solution.initial_board_velocity = (
 		solution.board_direction * solution.speed_board_per_second
 	)
 	return solution
+
+
+func calculate_speed_board_per_second(
+	config: LaunchConfig,
+	physics_profile: BallPhysicsProfile,
+	normalized_strength: float
+) -> float:
+	if config == null or physics_profile == null:
+		return 0.0
+	return minf(
+		config.get_speed_for_strength(normalized_strength),
+		physics_profile.max_linear_speed_board_per_second
+	)
 
 
 func _copy_command_identity(command: LaunchCommand, solution: LaunchSolution) -> void:

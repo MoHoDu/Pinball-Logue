@@ -298,7 +298,11 @@ func _refresh_hud() -> void:
 			_aim_angle_degrees,
 		]
 	if _strength_label != null:
-		_strength_label.text = "발사 세기: %d%%" % roundi(_aim_strength * 100.0)
+		var launch_speed_ratio := _get_expected_launch_speed_ratio()
+		_strength_label.text = "발사 세기: %d%%%s" % [
+			roundi(launch_speed_ratio * 100.0),
+			_get_launch_strength_state_label(),
+		]
 	if _flipper_label != null:
 		_flipper_label.text = "선택 플리퍼: %s" % (
 			"없음" if _selected_flipper_direction == &"" else _get_direction_label(_selected_flipper_direction)
@@ -310,7 +314,8 @@ func _refresh_hud() -> void:
 		if _aim_guide.visible:
 			var launch_board := _board.get_launch_board_position()
 			var guide_length := (
-				launch_config.aim_guide_length_board_ratio * _aim_strength
+				launch_config.aim_guide_length_board_ratio
+				* _get_expected_launch_speed_ratio()
 			)
 			var target_board := (
 				launch_board
@@ -320,6 +325,47 @@ func _refresh_hud() -> void:
 				_board.board_to_local(launch_board),
 				_board.board_to_local(target_board),
 			])
+
+
+func _get_expected_launch_speed_ratio() -> float:
+	if launch_config == null or launch_config.maximum_speed_board_per_second <= 0.0:
+		return 0.0
+	var physics_profile := _get_selected_ball_physics_profile()
+	if physics_profile == null:
+		return 0.0
+	var expected_speed := _launch_strategy.calculate_speed_board_per_second(
+		launch_config, physics_profile, _aim_strength
+	)
+	return clampf(expected_speed / launch_config.maximum_speed_board_per_second, 0.0, 1.0)
+
+
+func _get_launch_strength_state_label() -> String:
+	var physics_profile := _get_selected_ball_physics_profile()
+	if launch_config == null or physics_profile == null:
+		return ""
+	var expected_speed := _launch_strategy.calculate_speed_board_per_second(
+		launch_config, physics_profile, _aim_strength
+	)
+	if (
+		physics_profile.max_linear_speed_board_per_second
+		< launch_config.maximum_speed_board_per_second
+		and is_equal_approx(
+			expected_speed, physics_profile.max_linear_speed_board_per_second
+		)
+	):
+		return " · 공 최대"
+	if is_zero_approx(_aim_strength):
+		return " · 최소"
+	if is_equal_approx(_aim_strength, 1.0):
+		return " · 최대"
+	return ""
+
+
+func _get_selected_ball_physics_profile() -> BallPhysicsProfile:
+	var slot := _inventory.get_selected_slot()
+	if slot == null or slot.ball_definition == null:
+		return null
+	return slot.ball_definition.physics_profile
 
 
 func _get_ball_list_text() -> String:
