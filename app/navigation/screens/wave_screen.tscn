@@ -42,7 +42,7 @@ theme_override_constants/separation = 10
 [node name="Title" type="Label" parent="Overlay/LeftPanel/Content" unique_id=808360293]
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
-text = "웨이브 · 공 발사 목업"
+text = "웨이브 · 공 발사와 플리퍼 목업"
 
 [node name="Phase" type="Label" parent="Overlay/LeftPanel/Content" unique_id=2142993805]
 layout_mode = 2
@@ -74,7 +74,7 @@ text = "발사 세기: 60%"
 
 [node name="Flipper" type="Label" parent="Overlay/RightPanel/Content" unique_id=1077986329]
 layout_mode = 2
-text = "선택 플리퍼: 없음"
+text = "선택 플리퍼: 아래쪽 · 좌우 플리퍼 쌍"
 
 [node name="Controls" type="Label" parent="Overlay/RightPanel/Content" unique_id=1416286250]
 layout_mode = 2

@@ -58,3 +58,39 @@ read_when:
 - 갱신 문서: `GROUND_RULES.md`, `GAME_TERMS.md`, `pinball/ball/SPEC.md`, `pinball/launcher/SPEC.md`, `pinball/shot/SPEC.md`, `pinball/flippers/SPEC.md`, `stages/boards/SPEC.md`, `integration/.work/basic-system-foundation/PLAN.md`, `integration/.work/basic-system-foundation/QA.md`
 - 검증 기준: 공 목록 1~3개, 숫자·방향키 선택 일치, 두 조준 방식의 동일 발사 명령, 상태별 `Space` 중복 없음, 활성 공 0/1, 낙하 결과 1회, 플리퍼 방향 중복 거부, 2D 어댑터 외 차원 노드 역참조 없음, 인스펙터 한국어 표시와 영문 직렬화 속성 보존
 - 승인 기록: 2026-07-29 사용자가 두 조준 방식을 설정으로 교체 가능하게 하고 나머지 확정 계획대로 3B 보완과 4단계를 진행하도록 승인함.
+
+## DEC-20260729-02 — 방향키별 플리퍼 조작 대상과 좌우 동시 작동
+
+- 상태: approved
+- 요청자: 사용자
+- 변경 전: 공 진행 중 각 방향키는 실제 플리퍼 하나에 고유 배정되고 `Space`는 선택한 플리퍼 하나의 작동 요청만 보냈다.
+- 변경 후: 각 방향키는 `왼쪽만`, `오른쪽만`, `좌우 쌍` 중 하나인 플리퍼 조작 대상에 고유 배정된다. 공 진행 중 방향키로 대상을 선택하고 `Space`를 누르면 왼쪽만·오른쪽만은 해당 플리퍼 하나, 좌우 쌍은 두 플리퍼가 같은 물리 틱에 함께 작동한다. 작동은 설정된 유지 뒤 자동 복귀하고, 공 패링은 공 최대 속도를 넘지 않으며 회전 방향은 왼쪽·오른쪽 역할에서 자동 계산한다.
+- 변경 이유: 보드 위치마다 단일 플리퍼와 전형적인 좌우 동시 플리퍼 조작을 같은 입력 체계로 구성하고, 기획자가 웨이브별로 조작 단위를 바꿀 수 있게 하기 위해서다.
+- 영향받는 기능: `pinball/flippers`, `stages/boards`, `stages/waves`, `ui/gameplay`, `shared/contracts`, Godot 편집기 플러그인, `integration`
+- 갱신 문서: `GAME_TERMS.md`, `pinball/flippers/SPEC.md`, `integration/.work/basic-system-foundation/PLAN.md`, `integration/.work/basic-system-foundation/QA.md`
+- 검증 기준: 실제 플리퍼 1~4개, 세 조작 구성, 조작 대상별 고유 방향키, 좌우 같은 물리 틱 작동, 중복 힘·복귀 불능 없음, 패링 1회와 공 최대 속도 준수, 차원 독립 명령
+- 승인 기록: 2026-07-29 사용자가 세 권장안을 수용한 뒤 방향키가 선택하는 구성을 왼쪽만·오른쪽만·좌우 쌍으로 명확히 하고 20분 목표의 5단계 구현을 승인함.
+
+## DEC-20260729-03 — 플리퍼 조작 대상의 필수 기본 선택
+
+- 상태: approved
+- 요청자: 사용자
+- 변경 전: 공 발사 전과 발사·낙하 전환 직후에는 선택된 플리퍼 조작 대상이 없었으며, 공 진행 중 방향키를 먼저 눌러야 `Space`로 작동할 수 있었다.
+- 변경 후: 유효한 웨이브에는 선택된 플리퍼 조작 대상이 항상 하나 존재한다. 최초 선택은 사용 가능한 방향 중 `아래 → 왼쪽 → 오른쪽 → 위` 우선순위로 자동 결정하며 발사·낙하 전환에서도 선택을 유지한다. 사용 불가능한 방향을 눌러도 기존 선택을 비우지 않는다.
+- 변경 이유: 공이 플리퍼 구간에 빠르게 도달했을 때 별도 선택 입력 없이 즉시 타이밍 입력을 할 수 있게 하고, `선택 플리퍼: 없음` 상태로 인한 조작 누락을 제거하기 위해서다.
+- 영향받는 기능: `pinball/flippers`, 현재 웨이브 플레이 화면, `integration`
+- 갱신 문서: `pinball/flippers/SPEC.md`, `integration/.work/basic-system-foundation/PLAN.md`, `integration/.work/basic-system-foundation/QA.md`, `integration/.work/basic-system-foundation/daily/2026-07-29.md`
+- 검증 기준: 최초 선택 우선순위 고정, 기본 하단 좌우 쌍 자동 선택, 발사·낙하 뒤 선택 유지, 잘못된 방향 입력 뒤 기존 선택 보존, 유효한 플레이 상태에서 선택 없음 0회
+- 승인 기록: 2026-07-29 사용자가 최초 선택 우선순위를 아래·왼쪽·오른쪽·위로 지정하고 선택된 플리퍼가 없을 수 없다고 확정함.
+
+## DEC-20260729-04 — 개발자 모드의 플리퍼 묶음·드레인 통합 편집
+
+- 상태: approved
+- 요청자: 사용자
+- 변경 전: 플리퍼 조작 대상은 웨이브 배치 인스펙터에서 내부 지점 이름을 직접 입력하고, 드레인 위치·너비·감지 깊이는 보드 설계도·보기 설정·플레이 보드 노드에 나뉘어 있었다. 새 보드 생성도 보드별 보기 설정을 함께 복제하지 않았다.
+- 변경 후: 12단계 구조를 유지하면서 11단계 개발자 모드에 보드 위 플리퍼 지점 클릭 기반 단일·좌우 쌍 편집과 드레인 위치·너비·감지 깊이 통합 편집을 포함한다. 드레인 실제 감지 영역을 화면에 표시하고, 새 보드는 설계도·웨이브 배치·보기 설정 복제본을 함께 생성·연결한다. Godot 보드 제작 도구와 개발자 모드는 같은 차원 독립 설정과 한국어 표시 메타데이터를 사용한다.
+- 변경 이유: Godot·GDScript·내부 지점 이름을 모르는 기획자가 여러 파일과 노드를 오가지 않고 보드 화면에서 조작 구역을 이해하고 안전하게 편집할 수 있게 하기 위해서다.
+- 영향받는 기능: `stages/boards`, `stages/waves`, `pinball/flippers`, Godot 보드 제작 도구, 11단계 개발자 모드, `integration`
+- 갱신 문서: `integration/.work/basic-system-foundation/PLAN.md`, `integration/.work/basic-system-foundation/QA.md`, `integration/.work/basic-system-foundation/daily/2026-07-29.md`
+- 검증 기준: 플리퍼 지점 이름 수동 입력 0회, 단일·쌍 클릭 편집과 방향 강조, 드레인 위치·너비·깊이 통합 편집과 감지 영역 미리보기, Undo/Redo, 복제본 저장·재열기·원상 복구, 출시 빌드 비활성, 비개발자 가이드 수행
+- 승인 기록: 2026-07-29 사용자가 현재 편집 UX의 한계에 동의하고 개발자 모드 단계에 후속 작업으로 추가한 뒤 현재 Step 5 변경을 커밋하도록 요청함.

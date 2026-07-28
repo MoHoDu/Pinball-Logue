@@ -3,6 +3,13 @@ extends Node2D
 
 signal progression_requested(action_id: StringName)
 
+const DEFAULT_FLIPPER_DIRECTION_PRIORITY: Array[StringName] = [
+	&"down",
+	&"left",
+	&"right",
+	&"up",
+]
+
 @export var ball_loadout: WaveBallLoadoutConfig
 @export var launch_config: LaunchConfig
 @export_node_path("PlayableBoard2D") var playable_board_path := NodePath("PlayableBoard2D")
@@ -35,8 +42,10 @@ var _aim_angle_degrees := 0.0
 var _aim_strength := 0.0
 var _shot_sequence := 0
 var _request_sequence := 0
+var _flipper_action_sequence := 0
 var _current_shot_id: StringName = &""
 var _selected_flipper_direction: StringName = &""
+var _selected_flipper_target: Dictionary = {}
 var _wave_complete := false
 
 
@@ -83,7 +92,7 @@ func _setup_play_screen() -> String:
 		return launch_errors[0]
 	if not _input_router.configure_aim_mode(launch_config.get_aim_mode_id()):
 		return "지원하지 않는 조준 방식입니다."
-	return _physics_adapter.configure(
+	var physics_error := _physics_adapter.configure(
 		_board,
 		Callable(self, "_board_to_world_position"),
 		Callable(self, "_world_to_board_position"),
@@ -91,6 +100,9 @@ func _setup_play_screen() -> String:
 		Callable(self, "_world_to_board_velocity"),
 		Callable(self, "_board_radius_to_local")
 	)
+	if not physics_error.is_empty():
+		return physics_error
+	return _ensure_selected_flipper_target()
 
 
 func _connect_inputs() -> void:
@@ -224,26 +236,43 @@ func _on_launch_requested() -> void:
 		_show_status(shot_error)
 		return
 	_input_router.enter_ball_in_play()
-	_selected_flipper_direction = &""
-	_show_status("공이 진행 중입니다. 방향키로 플리퍼를 고르고 Space로 작동 요청하세요.")
+	var selection_error := _ensure_selected_flipper_target()
+	if not selection_error.is_empty():
+		_show_status(selection_error)
+		return
+	_show_status("공이 진행 중입니다. %s이(가) 선택되어 있습니다. Space로 작동하세요." % _get_flipper_target_label(_selected_flipper_target))
 	_refresh_hud()
 
 
 func _on_flipper_selection_requested(direction_id: StringName) -> void:
-	var anchor_id := _board.get_layout_config().get_flipper_anchor_id_for_direction(direction_id)
-	if anchor_id == &"":
+	var target := _board.get_flipper_control_target_for_direction(direction_id)
+	if target.is_empty():
 		_show_status("이 방향에 배정된 플리퍼가 없습니다: %s" % _get_direction_label(direction_id))
 		return
 	_selected_flipper_direction = direction_id
-	_show_status("%s 플리퍼를 선택했습니다." % _get_direction_label(direction_id))
+	_selected_flipper_target = target
+	_show_status("%s 방향의 %s을(를) 선택했습니다." % [
+		_get_direction_label(direction_id),
+		_get_flipper_target_label(target),
+	])
 	_refresh_hud()
 
 
 func _on_flipper_action_requested() -> void:
-	if _selected_flipper_direction == &"":
+	if _selected_flipper_direction == &"" or _selected_flipper_target.is_empty():
 		_show_status("방향키로 플리퍼를 먼저 선택하세요.")
 		return
-	_show_status("선택한 플리퍼 작동 요청을 확인했습니다. 실제 움직임은 5단계에서 연결됩니다.")
+	_flipper_action_sequence += 1
+	var action_id := StringName("flipper_action_%03d" % _flipper_action_sequence)
+	var action_error := _board.activate_flipper_control_target(
+		action_id,
+		_current_shot_id,
+		_selected_flipper_direction
+	)
+	if not action_error.is_empty():
+		_show_status(action_error)
+		return
+	_show_status("%s을(를) 작동했습니다. 자동으로 원래 위치로 돌아옵니다." % _get_flipper_target_label(_selected_flipper_target))
 
 
 func _on_ball_exit_detected(shot_id: StringName, end_reason: StringName) -> void:
@@ -304,9 +333,13 @@ func _refresh_hud() -> void:
 			_get_launch_strength_state_label(),
 		]
 	if _flipper_label != null:
-		_flipper_label.text = "선택 플리퍼: %s" % (
-			"없음" if _selected_flipper_direction == &"" else _get_direction_label(_selected_flipper_direction)
-		)
+		var selected_label := "설정 오류"
+		if _selected_flipper_direction != &"" and not _selected_flipper_target.is_empty():
+			selected_label = "%s · %s" % [
+				_get_direction_label(_selected_flipper_direction),
+				_get_flipper_target_label(_selected_flipper_target),
+			]
+		_flipper_label.text = "선택 플리퍼: %s" % selected_label
 	if _controls_label != null:
 		_controls_label.text = _get_controls_text()
 	if _aim_guide != null:
@@ -448,6 +481,36 @@ func _get_direction_label(direction_id: StringName) -> String:
 	return "미지정"
 
 
+func _ensure_selected_flipper_target() -> String:
+	if (
+		_selected_flipper_direction != &""
+		and not _selected_flipper_target.is_empty()
+		and not _board.get_flipper_control_target_for_direction(
+			_selected_flipper_direction
+		).is_empty()
+	):
+		return ""
+	for direction_id in DEFAULT_FLIPPER_DIRECTION_PRIORITY:
+		var target := _board.get_flipper_control_target_for_direction(direction_id)
+		if target.is_empty():
+			continue
+		_selected_flipper_direction = direction_id
+		_selected_flipper_target = target
+		return ""
+	return "사용 가능한 플리퍼 조작 대상이 없어 플레이를 시작할 수 없습니다."
+
+
+func _get_flipper_target_label(target: Dictionary) -> String:
+	match StringName(target.get("mode", &"")):
+		FlipperControlTargetConfig.MODE_LEFT_ONLY:
+			return "왼쪽 플리퍼"
+		FlipperControlTargetConfig.MODE_RIGHT_ONLY:
+			return "오른쪽 플리퍼"
+		FlipperControlTargetConfig.MODE_PAIR:
+			return "좌우 플리퍼 쌍"
+	return "플리퍼 조작 대상"
+
+
 func _board_radius_to_local(_board_position: Vector2, radius_board_ratio: float) -> float:
 	return _board.get_board_width_pixels() * radius_board_ratio
 
@@ -494,6 +557,14 @@ func get_active_shot_id() -> StringName:
 
 func has_active_ball() -> bool:
 	return _physics_adapter.has_active_ball()
+
+
+func get_selected_flipper_target() -> Dictionary:
+	return _selected_flipper_target.duplicate(true)
+
+
+func get_selected_flipper_direction() -> StringName:
+	return _selected_flipper_direction
 
 
 func is_wave_mockup_complete() -> bool:

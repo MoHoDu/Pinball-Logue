@@ -123,6 +123,35 @@ func get_projected_anchor_positions(anchor_type: StringName) -> Dictionary:
 	return projected_positions
 
 
+func get_composition_config() -> WaveBoardCompositionConfig:
+	return composition_config
+
+
+func apply_composition_config(config: WaveBoardCompositionConfig) -> void:
+	composition_config = config
+	_rebuild_object_previews()
+	queue_redraw()
+
+
+func get_definitions_by_id() -> Dictionary:
+	return _get_definitions_by_id()
+
+
+func get_object_definition(content_id: StringName) -> BoardPlaceableDefinition:
+	return _get_definitions_by_id().get(content_id) as BoardPlaceableDefinition
+
+
+func set_flipper_previews_visible(is_visible: bool) -> void:
+	_ensure_preview_container()
+	if layout_config == null:
+		return
+	for preview in _preview_container.get_children():
+		var point_id := StringName(preview.get_meta("board_point_id", ""))
+		var point := layout_config.get_anchor(point_id)
+		if point != null and point.get_type_id() == BoardAnchorConfig.TYPE_FLIPPER:
+			preview.visible = is_visible
+
+
 func _draw_bumpers() -> void:
 	for anchor in layout_config.get_anchors_by_type(BoardAnchorConfig.TYPE_BUMPER):
 		var bumper_position := view_config.project_board_point(anchor.board_position)

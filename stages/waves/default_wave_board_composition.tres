@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://bfphwjia2q85s" path="res://stages/waves/wave_board_composition_config.gd" id="1_composition"]
 [ext_resource type="Script" uid="uid://blfmnf5hgakhy" path="res://stages/waves/board_placement_assignment_config.gd" id="2_assignment"]
 [ext_resource type="Resource" uid="uid://c3wwcyewfeten" path="res://stages/boards/default_board_layout_config.tres" id="3_layout"]
+[ext_resource type="Script" uid="uid://ckyygw1tllxxy" path="res://pinball/flippers/flipper_control_target_config.gd" id="4_control"]
 
 [sub_resource type="Resource" id="Assignment_bumper_top_left"]
 script = ExtResource("2_assignment")
@@ -54,7 +55,13 @@ script = ExtResource("2_assignment")
 point_id = &"object_right"
 content_id = &"general_post"
 
+[sub_resource type="Resource" id="ControlTarget_bottom_pair"]
+script = ExtResource("4_control")
+left_point_id = &"flipper_left"
+right_point_id = &"flipper_right"
+
 [resource]
 script = ExtResource("1_composition")
 layout_config = ExtResource("3_layout")
 assignments = Array[ExtResource("2_assignment")]([SubResource("Assignment_bumper_top_left"), SubResource("Assignment_bumper_top"), SubResource("Assignment_bumper_top_right"), SubResource("Assignment_bumper_mid_left"), SubResource("Assignment_bumper_mid_right"), SubResource("Assignment_flipper_left"), SubResource("Assignment_flipper_right"), SubResource("Assignment_relic_center"), SubResource("Assignment_object_left"), SubResource("Assignment_object_right")])
+flipper_control_targets = Array[ExtResource("4_control")]([SubResource("ControlTarget_bottom_pair")])

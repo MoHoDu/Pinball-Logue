@@ -2,13 +2,18 @@ class_name PlayableBoard2D
 extends Node2D
 
 signal ball_exit_detected(shot_id: StringName, end_reason: StringName)
+signal flipper_action_started(action_id: StringName, anchor_ids: PackedStringArray)
+signal flipper_action_finished(action_id: StringName, anchor_ids: PackedStringArray)
+signal flipper_parry_applied(action_id: StringName, anchor_id: StringName, shot_id: StringName)
 
 const END_REASON_DRAIN: StringName = &"drain"
 const END_REASON_OUT_OF_BOUNDS: StringName = &"out_of_bounds"
 const BALL_GROUP: StringName = &"pinball_ball_2d"
 const GEOMETRY_EPSILON := 0.001
+const FLIPPER_SCENE := preload("res://pinball/flippers/flipper_2d.tscn")
 
 @export_node_path("BoardMockup2D") var board_mockup_path := NodePath("BoardMockup2D")
+@export var composition_override: WaveBoardCompositionConfig
 @export_range(1.0, 40.0, 1.0) var rail_collision_width := 12.0
 @export_range(20.0, 240.0, 1.0) var drain_sensor_depth := 96.0
 @export_range(20.0, 400.0, 1.0) var out_of_bounds_margin := 160.0
@@ -16,16 +21,25 @@ const GEOMETRY_EPSILON := 0.001
 var _board_mockup: BoardMockup2D
 var _rail_body: StaticBody2D
 var _drain_area: Area2D
+var _flipper_container: Node2D
+var _flipper_adapter := FlipperPhysics2DAdapter.new()
+var _flipper_setup_error := ""
 var _projected_bounds := Rect2()
 var _ended_shot_ids: Dictionary = {}
 
 
 func _ready() -> void:
 	_board_mockup = get_node_or_null(board_mockup_path) as BoardMockup2D
+	if _board_mockup != null and composition_override != null:
+		_board_mockup.apply_composition_config(composition_override)
+	_flipper_adapter.action_started.connect(flipper_action_started.emit)
+	_flipper_adapter.action_finished.connect(flipper_action_finished.emit)
+	_flipper_adapter.parry_applied.connect(flipper_parry_applied.emit)
 	_rebuild_physics()
 
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
+	_flipper_adapter.physics_tick(delta)
 	if _board_mockup == null or _projected_bounds.size == Vector2.ZERO:
 		return
 	var safe_bounds := _projected_bounds.grow(out_of_bounds_margin)
@@ -49,6 +63,8 @@ func get_validation_errors() -> PackedStringArray:
 		errors.append("드레인 감지 깊이는 양수여야 합니다.")
 	if not is_finite(out_of_bounds_margin) or out_of_bounds_margin <= 0.0:
 		errors.append("보드 밖 안전 종료 여백은 양수여야 합니다.")
+	if not _flipper_setup_error.is_empty():
+		errors.append(_flipper_setup_error)
 	return errors
 
 
@@ -135,12 +151,46 @@ func get_board_width_pixels() -> float:
 	return view.board_size.x
 
 
+func get_flipper_control_target_for_direction(direction_id: StringName) -> Dictionary:
+	if _board_mockup == null or _board_mockup.composition_config == null:
+		return {}
+	return _board_mockup.composition_config.get_flipper_control_target_for_direction(
+		direction_id,
+		_board_mockup.get_definitions_by_id()
+	)
+
+
+func activate_flipper_control_target(
+	action_id: StringName,
+	shot_id: StringName,
+	direction_id: StringName
+) -> String:
+	var target := get_flipper_control_target_for_direction(direction_id)
+	if target.is_empty():
+		return "이 방향에 배정된 플리퍼 조작 대상이 없습니다."
+	var anchor_ids := PackedStringArray()
+	for point_id in target.get("point_ids", []):
+		anchor_ids.append(String(point_id))
+	var command := FlipperActionCommand.create(
+		action_id,
+		shot_id,
+		direction_id,
+		anchor_ids
+	)
+	return _flipper_adapter.activate(command)
+
+
+func is_flipper_action_active(action_id: StringName) -> bool:
+	return _flipper_adapter.is_action_active(action_id)
+
+
 func clear_finished_shot(shot_id: StringName) -> void:
 	_ended_shot_ids.erase(shot_id)
 
 
 func _rebuild_physics() -> void:
 	_clear_generated_physics()
+	_flipper_setup_error = ""
 	if not get_validation_errors().is_empty():
 		return
 	var boundary := _board_mockup.get_projected_boundary()
@@ -162,6 +212,7 @@ func _rebuild_physics() -> void:
 		else:
 			_add_rail_segment(edge_start, edge_end)
 	_create_drain_sensor(drain_position)
+	_rebuild_flippers()
 
 
 func _clear_generated_physics() -> void:
@@ -169,8 +220,111 @@ func _clear_generated_physics() -> void:
 		_rail_body.queue_free()
 	if is_instance_valid(_drain_area):
 		_drain_area.queue_free()
+	if is_instance_valid(_flipper_container):
+		_flipper_container.queue_free()
 	_rail_body = null
 	_drain_area = null
+	_flipper_container = null
+	_flipper_adapter.reset()
+	_flipper_adapter = FlipperPhysics2DAdapter.new()
+	_flipper_adapter.action_started.connect(flipper_action_started.emit)
+	_flipper_adapter.action_finished.connect(flipper_action_finished.emit)
+	_flipper_adapter.parry_applied.connect(flipper_parry_applied.emit)
+
+
+func _rebuild_flippers() -> void:
+	var definitions_by_id := _board_mockup.get_definitions_by_id()
+	var composition := _board_mockup.get_composition_config()
+	if composition == null:
+		_flipper_setup_error = "웨이브 배치에 플리퍼 조작 정보가 없습니다."
+		return
+	var adapter_error := _flipper_adapter.configure(
+		Callable(self, "_world_to_board_position"),
+		Callable(self, "_board_to_world_velocity"),
+		Callable(self, "_world_to_board_velocity")
+	)
+	if not adapter_error.is_empty():
+		_flipper_setup_error = adapter_error
+		return
+	var roles_by_point_id := _get_flipper_roles_by_point_id(composition, definitions_by_id)
+	_flipper_container = Node2D.new()
+	_flipper_container.name = "RuntimeFlippers"
+	add_child(_flipper_container)
+	for placement in composition.get_resolved_placements(definitions_by_id):
+		var definition := placement.get("definition") as FlipperDefinition
+		if definition == null:
+			continue
+		var point_id := StringName(placement.get("point_id", &""))
+		var flipper := FLIPPER_SCENE.instantiate() as Flipper2D
+		if flipper == null:
+			_flipper_setup_error = "2D 플리퍼 장면을 만들 수 없습니다."
+			return
+		var profile := definition.motion_profile
+		var pivot_position := _board_mockup.get_projected_anchor_position(point_id)
+		var board_center_position := board_to_local(get_layout_config().get_board_center())
+		var configure_error := flipper.configure(
+			point_id,
+			StringName(roles_by_point_id.get(point_id, &"")),
+			profile,
+			_board_mockup.get_projected_anchor_direction(point_id),
+			pivot_position.direction_to(board_center_position),
+			profile.length_board_ratio * get_board_width_pixels(),
+			profile.width_board_ratio * get_board_width_pixels()
+		)
+		if not configure_error.is_empty():
+			flipper.free()
+			_flipper_setup_error = configure_error
+			return
+		_flipper_container.add_child(flipper)
+		flipper.position = pivot_position
+		flipper.z_index = 20
+		_apply_flipper_presentation(flipper, StringName(placement.get("content_id", &"")))
+		var register_error := _flipper_adapter.register_flipper(point_id, flipper)
+		if not register_error.is_empty():
+			_flipper_setup_error = register_error
+			return
+	_board_mockup.set_flipper_previews_visible(false)
+
+
+func _get_flipper_roles_by_point_id(
+	composition: WaveBoardCompositionConfig,
+	definitions_by_id: Dictionary
+) -> Dictionary:
+	var roles: Dictionary = {}
+	for target in composition.get_resolved_flipper_control_targets(definitions_by_id):
+		var left_point_id := StringName(target.get("left_point_id", &""))
+		var right_point_id := StringName(target.get("right_point_id", &""))
+		if left_point_id != &"":
+			roles[left_point_id] = Flipper2D.ROLE_LEFT
+		if right_point_id != &"":
+			roles[right_point_id] = Flipper2D.ROLE_RIGHT
+	return roles
+
+
+func _apply_flipper_presentation(flipper: Flipper2D, content_id: StringName) -> void:
+	if _board_mockup.presentation_catalog == null:
+		return
+	var presentation_scene := _board_mockup.presentation_catalog.get_scene(content_id)
+	if presentation_scene == null:
+		return
+	var presentation_error := flipper.set_presentation_scene(presentation_scene)
+	if not presentation_error.is_empty():
+		_flipper_setup_error = presentation_error
+
+
+func _world_to_board_position(world_position: Vector2) -> Vector2:
+	return local_to_board(to_local(world_position))
+
+
+func _board_to_world_velocity(board_position: Vector2, board_velocity: Vector2) -> Vector2:
+	var local_velocity := board_velocity_to_local(board_position, board_velocity)
+	return global_transform.basis_xform(local_velocity)
+
+
+func _world_to_board_velocity(world_position: Vector2, world_velocity: Vector2) -> Vector2:
+	var local_position := to_local(world_position)
+	var local_velocity := global_transform.affine_inverse().basis_xform(world_velocity)
+	return local_velocity_to_board(local_position, local_velocity)
 
 
 func _add_split_drain_edge(edge_start: Vector2, edge_end: Vector2, drain_position: Vector2) -> void:

@@ -49,13 +49,25 @@ static var PRESENTATIONS: Dictionary = {
 		"relic_slot_radius": _entry("유물 지점 반지름", "유물 배치 지점 미리보기의 크기입니다.", "px", "px"),
 		"drain_width": _entry("드레인 너비", "낙하 구간 미리보기의 너비입니다.", "px", "px"),
 	},
+	"PlayableBoard2D": {
+		"composition_override": _entry("시험할 웨이브 배치", "기본 파일을 바꾸지 않고 이번 플레이 화면에서 시험할 웨이브 배치 복제본입니다."),
+		"rail_collision_width": _entry("레일 충돌 두께", "공이 보드 외곽선을 통과하지 않게 하는 실제 충돌 레일의 두께입니다.", "px", "px"),
+		"drain_sensor_depth": _entry("드레인 감지 깊이", "공이 드레인을 지난 것으로 감지할 영역의 깊이입니다.", "px", "px"),
+		"out_of_bounds_margin": _entry("보드 밖 종료 여백", "공이 이 여백 밖으로 나가면 안전하게 낙하 처리합니다.", "px", "px"),
+	},
 	"WaveBoardCompositionConfig": {
 		"layout_config": _entry("보드 설계도", "이 웨이브 배치가 사용할 보드 외곽선과 배치 지점입니다."),
 		"assignments": _entry("웨이브 배치", "각 배치 지점에 놓을 오브젝트 원형의 목록입니다."),
+		"flipper_control_targets": _entry("플리퍼 조작 대상", "방향키 하나로 작동할 왼쪽만·오른쪽만·좌우 쌍 플리퍼 묶음입니다."),
 	},
 	"BoardPlacementAssignmentConfig": {
 		"point_id": _entry("배치 지점", "오브젝트를 놓을 보드 배치 지점의 이름입니다."),
 		"content_id": _entry("오브젝트 원형", "선택한 지점에 배치할 범퍼·벽·플리퍼·유물 등의 원형 이름입니다."),
+	},
+	"FlipperControlTargetConfig": {
+		"mode": _entry("작동 방식", "왼쪽만·오른쪽만·좌우 쌍 중 이 방향키로 함께 작동할 방식을 고릅니다."),
+		"left_point_id": _entry("왼쪽 플리퍼 지점", "왼쪽 플리퍼로 사용할 배치 지점 이름입니다."),
+		"right_point_id": _entry("오른쪽 플리퍼 지점", "오른쪽 플리퍼로 사용할 배치 지점 이름입니다."),
 	},
 	"BoardPlaceableDefinition": {
 		"content_id": _entry("오브젝트 원형 ID", "다른 웨이브에서도 바뀌지 않는 오브젝트의 고유 이름입니다."),
@@ -66,6 +78,20 @@ static var PRESENTATIONS: Dictionary = {
 	},
 	"BumperDefinition": {
 		"bumper_type": _entry("범퍼 종류", "일반·반동·트랙·샷 중 범퍼의 규칙 종류입니다."),
+	},
+	"FlipperDefinition": {
+		"motion_profile": _entry("플리퍼 작동 설정", "플리퍼의 크기·회전 시간·복귀 시간·공 패링 힘을 모아 둔 설정입니다."),
+	},
+	"FlipperMotionProfile": {
+		"length_board_ratio": _entry("플리퍼 길이", "보드 너비를 기준으로 한 플리퍼의 길이입니다.", "보드 비율"),
+		"width_board_ratio": _entry("플리퍼 너비", "보드 너비를 기준으로 한 플리퍼의 두께입니다.", "보드 비율"),
+		"activation_angle_degrees": _entry("작동 회전 각도", "Space를 눌렀을 때 쉬는 위치에서 회전하는 각도입니다.", "°", "°"),
+		"activation_seconds": _entry("올라가는 시간", "플리퍼가 쉬는 위치에서 타격 위치까지 움직이는 시간입니다.", "초"),
+		"hold_seconds": _entry("타격 위치 유지 시간", "플리퍼가 가장 올라간 위치에 머무는 시간입니다.", "초"),
+		"return_seconds": _entry("돌아오는 시간", "플리퍼가 타격 위치에서 쉬는 위치로 자동 복귀하는 시간입니다.", "초"),
+		"base_hit_impulse_board_per_second": _entry("기본 타격 힘", "플리퍼가 공을 밀어내는 기본 힘입니다.", "보드 폭/초"),
+		"parry_window_seconds": _entry("공 패링 시간", "작동 직후 추가 타격 힘을 받을 수 있는 짧은 시간입니다.", "초"),
+		"parry_impulse_multiplier": _entry("공 패링 힘 배수", "공 패링 시간에 맞춘 충돌의 추가 힘 배수입니다.", "배"),
 	},
 	"BoardObjectPresentation2D": {
 		"content_id": _entry("오브젝트 원형 ID", "2D 디자인과 연결할 오브젝트 원형의 고유 이름입니다."),

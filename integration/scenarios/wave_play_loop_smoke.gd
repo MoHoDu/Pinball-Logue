@@ -17,7 +17,29 @@ func _run() -> void:
 	await process_frame
 	var router := screen.get_node("WaveInputRouter") as WaveInputRouter
 	var board := screen.get_node("PlayableBoard2D") as PlayableBoard2D
-	_expect(screen.get_remaining_ball_count() == 3, "기본 웨이브에 공 세 개가 준비되지 않았습니다.")
+	_expect(
+		screen.get_remaining_ball_count() == 3,
+		"기본 웨이브에 공 세 개가 준비되지 않았습니다: %s / %s" % [
+			board.get_validation_errors(),
+			(screen.get_node("Overlay/Status") as Label).text,
+		]
+	)
+	_expect(
+		WavePlayScreen.DEFAULT_FLIPPER_DIRECTION_PRIORITY == [
+			&"down", &"left", &"right", &"up",
+		],
+		"최초 플리퍼 선택 우선순위가 아래→왼쪽→오른쪽→위가 아닙니다."
+	)
+	_expect(
+		screen.get_selected_flipper_direction() == &"down",
+		"웨이브 최초 진입에서 기본 하단 플리퍼 조작 대상이 자동 선택되지 않았습니다."
+	)
+	_expect(
+		not screen.get_selected_flipper_target().is_empty(),
+		"웨이브 최초 진입에서 선택된 플리퍼 조작 대상이 없습니다."
+	)
+	var initial_flipper_label := screen.get_node("Overlay/RightPanel/Content/Flipper") as Label
+	_expect(not "없음" in initial_flipper_label.text, "웨이브 최초 HUD에 선택 플리퍼 없음이 표시됐습니다.")
 
 	for expected_remaining in [2, 1, 0]:
 		router._unhandled_input(_key_event(KEY_SPACE))
@@ -95,6 +117,40 @@ func _run() -> void:
 			)
 		router._unhandled_input(_key_event(KEY_SPACE))
 		_expect(screen.get_shot_phase() == ShotPhases.IN_PLAY, "두 번째 Space로 공을 발사하지 못했습니다.")
+		_expect(
+			screen.get_selected_flipper_direction() == &"down"
+			and not screen.get_selected_flipper_target().is_empty(),
+			"공 발사 뒤 플리퍼 조작 대상 선택이 비었습니다."
+		)
+		if expected_remaining == 2:
+			router._unhandled_input(_key_event(KEY_UP))
+			var target := screen.get_selected_flipper_target()
+			_expect(
+				screen.get_selected_flipper_direction() == &"down",
+				"배정되지 않은 위 방향키가 기존 하단 플리퍼 선택을 비우거나 바꿨습니다."
+			)
+			_expect(
+				StringName(target.get("mode", &"")) == FlipperControlTargetConfig.MODE_PAIR,
+				"자동 선택된 기본 좌우 플리퍼 쌍을 유지하지 못했습니다."
+			)
+			var runtime_flippers := board.get_node_or_null("RuntimeFlippers")
+			_expect(runtime_flippers != null, "플레이 보드에 실제 2D 플리퍼가 조립되지 않았습니다.")
+			if runtime_flippers != null:
+				var left_flipper := _find_flipper(runtime_flippers, &"flipper_left")
+				var right_flipper := _find_flipper(runtime_flippers, &"flipper_right")
+				_expect(left_flipper != null and right_flipper != null, "기본 좌우 플리퍼 물리 노드를 찾지 못했습니다.")
+				if left_flipper != null and right_flipper != null:
+					router._unhandled_input(_key_event(KEY_SPACE))
+					_expect(
+						left_flipper.is_action_active() and right_flipper.is_action_active(),
+						"Space 한 번에 좌우 플리퍼가 함께 작동하지 않았습니다."
+					)
+					for _frame in 20:
+						await physics_frame
+					_expect(
+						not left_flipper.is_action_active() and not right_flipper.is_action_active(),
+						"좌우 플리퍼가 설정 시간 뒤 자동 복귀하지 않았습니다."
+					)
 		var shot_id := screen.get_active_shot_id()
 		board.ball_exit_detected.emit(shot_id, ShotEndReasons.DRAIN)
 		board.ball_exit_detected.emit(shot_id, ShotEndReasons.DRAIN)
@@ -106,6 +162,11 @@ func _run() -> void:
 		)
 		_expect(not screen.has_active_ball(), "낙하 처리가 끝난 공이 물리 보드에 남았습니다.")
 		_expect(screen.get_shot_phase() == ShotPhases.BALL_SELECTION, "중복 낙하 뒤 공 선택 상태로 돌아오지 못했습니다.")
+		_expect(
+			screen.get_selected_flipper_direction() == &"down"
+			and not screen.get_selected_flipper_target().is_empty(),
+			"공 낙하 뒤 플리퍼 조작 대상 선택이 비었습니다."
+		)
 
 	_expect(screen.is_wave_mockup_complete(), "마지막 공 낙하 뒤 발사 반복이 종료되지 않았습니다.")
 	router._unhandled_input(_key_event(KEY_SPACE))
@@ -128,6 +189,13 @@ func _get_board_line_length(line: Line2D, board: PlayableBoard2D) -> float:
 	return board.local_to_board(line.points[0]).distance_to(
 		board.local_to_board(line.points[1])
 	)
+
+
+func _find_flipper(parent: Node, anchor_id: StringName) -> Flipper2D:
+	for child in parent.get_children():
+		if child is Flipper2D and child.anchor_id == anchor_id:
+			return child
+	return null
 
 
 func _expect(condition: bool, message: String) -> void:
