@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="WaveBoardCompositionConfig" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://stages/waves/wave_board_composition_config.gd" id="1_composition"]
+[ext_resource type="Script" path="res://stages/waves/board_placement_assignment_config.gd" id="2_assignment"]
+[ext_resource type="Resource" path="res://stages/boards/my_board_layout_config.tres" id="3_layout"]
+
+[sub_resource type="Resource" id="Assignment_bumper_top"]
+script = ExtResource("2_assignment")
+point_id = &"bumper_top"
+content_id = &"bumper_bounce"
+
+[sub_resource type="Resource" id="Assignment_bumper_mid_left"]
+script = ExtResource("2_assignment")
+point_id = &"bumper_mid_left"
+content_id = &"bumper_normal"
+
+[sub_resource type="Resource" id="Assignment_bumper_mid_right"]
+script = ExtResource("2_assignment")
+point_id = &"bumper_mid_right"
+content_id = &"bumper_normal"
+
+[sub_resource type="Resource" id="Assignment_flipper_left"]
+script = ExtResource("2_assignment")
+point_id = &"flipper_left"
+content_id = &"flipper_standard"
+
+[sub_resource type="Resource" id="Assignment_flipper_right"]
+script = ExtResource("2_assignment")
+point_id = &"flipper_right"
+content_id = &"flipper_small"
+
+[resource]
+script = ExtResource("1_composition")
+layout_config = ExtResource("3_layout")
+assignments = Array[ExtResource("2_assignment")]([SubResource("Assignment_bumper_top"), SubResource("Assignment_bumper_mid_left"), SubResource("Assignment_bumper_mid_right"), SubResource("Assignment_flipper_left"), SubResource("Assignment_flipper_right")])

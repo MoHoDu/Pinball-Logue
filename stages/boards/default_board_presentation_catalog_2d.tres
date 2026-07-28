@@ -1,0 +1,50 @@
+[gd_resource type="Resource" script_class="BoardObjectPresentation2DCatalog" format=3 uid="uid://dlucrjuvpg6vl"]
+
+[ext_resource type="Script" uid="uid://mufiqc7qiubx" path="res://stages/boards/board_object_presentation_2d_catalog.gd" id="1_catalog"]
+[ext_resource type="Script" uid="uid://dq31rw3i2l5qe" path="res://stages/boards/board_object_presentation_2d.gd" id="2_presentation"]
+[ext_resource type="PackedScene" path="res://stages/boards/prefabs_2d/normal_bumper_2d.tscn" id="3_normal"]
+[ext_resource type="PackedScene" path="res://stages/boards/prefabs_2d/bounce_bumper_2d.tscn" id="4_bounce"]
+[ext_resource type="PackedScene" path="res://stages/boards/prefabs_2d/wall_2d.tscn" id="5_wall"]
+[ext_resource type="PackedScene" path="res://stages/boards/prefabs_2d/general_object_2d.tscn" id="6_general"]
+[ext_resource type="PackedScene" path="res://stages/boards/prefabs_2d/standard_flipper_2d.tscn" id="7_flipper_standard"]
+[ext_resource type="PackedScene" path="res://stages/boards/prefabs_2d/compact_flipper_2d.tscn" id="8_flipper_compact"]
+[ext_resource type="PackedScene" path="res://stages/boards/prefabs_2d/relic_preview_2d.tscn" id="9_relic"]
+
+[sub_resource type="Resource" id="Presentation_normal"]
+script = ExtResource("2_presentation")
+content_id = &"bumper_normal"
+scene_2d = ExtResource("3_normal")
+
+[sub_resource type="Resource" id="Presentation_bounce"]
+script = ExtResource("2_presentation")
+content_id = &"bumper_bounce"
+scene_2d = ExtResource("4_bounce")
+
+[sub_resource type="Resource" id="Presentation_wall"]
+script = ExtResource("2_presentation")
+content_id = &"wall_standard"
+scene_2d = ExtResource("5_wall")
+
+[sub_resource type="Resource" id="Presentation_general"]
+script = ExtResource("2_presentation")
+content_id = &"general_post"
+scene_2d = ExtResource("6_general")
+
+[sub_resource type="Resource" id="Presentation_flipper_standard"]
+script = ExtResource("2_presentation")
+content_id = &"flipper_standard"
+scene_2d = ExtResource("7_flipper_standard")
+
+[sub_resource type="Resource" id="Presentation_flipper_compact"]
+script = ExtResource("2_presentation")
+content_id = &"flipper_small"
+scene_2d = ExtResource("8_flipper_compact")
+
+[sub_resource type="Resource" id="Presentation_relic"]
+script = ExtResource("2_presentation")
+content_id = &"relic_preview_path_guide"
+scene_2d = ExtResource("9_relic")
+
+[resource]
+script = ExtResource("1_catalog")
+presentations = Array[ExtResource("2_presentation")]([SubResource("Presentation_normal"), SubResource("Presentation_bounce"), SubResource("Presentation_wall"), SubResource("Presentation_general"), SubResource("Presentation_flipper_standard"), SubResource("Presentation_flipper_compact"), SubResource("Presentation_relic")])

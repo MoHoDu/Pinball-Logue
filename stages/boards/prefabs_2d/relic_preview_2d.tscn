@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://stages/boards/prefabs_2d/board_object_preview_2d.gd" id="1_preview"]
+
+[node name="RelicPreview2D" type="Node2D"]
+script = ExtResource("1_preview")
+preview_kind = "relic"
+primary_color = Color(0.31, 0.65, 0.58, 1)
+secondary_color = Color(0.12, 0.3, 0.28, 1)
+accent_color = Color(0.92, 0.7, 0.24, 1)
+preview_size = 24.0

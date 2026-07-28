@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="FlipperDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://pinball/flippers/flipper_definition.gd" id="1_flipper"]
+
+[resource]
+script = ExtResource("1_flipper")
+content_id = &"flipper_small"
+display_name = "소형 플리퍼"
+object_type = "flipper"
+indestructible = true
+max_durability = 0

@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="NavigationConfig" load_steps=15 format=3]
+[gd_resource type="Resource" script_class="NavigationConfig" format=3 uid="uid://dmaq5furkvqyb"]
 
-[ext_resource type="Script" path="res://app/navigation/navigation_config.gd" id="1_config"]
-[ext_resource type="Script" path="res://app/navigation/screen_route.gd" id="2_route"]
+[ext_resource type="Script" uid="uid://cqodkkoyo25ty" path="res://app/navigation/navigation_config.gd" id="1_config"]
+[ext_resource type="Script" uid="uid://dkrh5sg0oil1w" path="res://app/navigation/screen_route.gd" id="2_route"]
 [ext_resource type="PackedScene" path="res://app/navigation/screens/main_lobby_screen.tscn" id="3_main"]
 [ext_resource type="PackedScene" path="res://app/navigation/screens/stage_selection_screen.tscn" id="4_stage"]
 [ext_resource type="PackedScene" path="res://app/navigation/screens/wave_screen.tscn" id="5_wave"]
@@ -41,5 +41,4 @@ scene = ExtResource("8_results")
 
 [resource]
 script = ExtResource("1_config")
-initial_screen_id = &"main_lobby"
 routes = Array[ExtResource("2_route")]([SubResource("ScreenRoute_main"), SubResource("ScreenRoute_stage"), SubResource("ScreenRoute_wave"), SubResource("ScreenRoute_reward"), SubResource("ScreenRoute_boss"), SubResource("ScreenRoute_results")])
