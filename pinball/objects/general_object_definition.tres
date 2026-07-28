@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="BoardPlaceableDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://shared/contracts/board_placeable_definition.gd" id="1_placeable"]
+
+[resource]
+script = ExtResource("1_placeable")
+content_id = &"general_post"
+display_name = "일반 충돌 기둥"
+object_type = "general"
+indestructible = false
+max_durability = 2

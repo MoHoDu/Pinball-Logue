@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://cf83comtoph5"]
+
+[ext_resource type="Script" path="res://stages/boards/board_authoring_2d.gd" id="1_mockup"]
+[ext_resource type="Resource" uid="uid://c3wwcyewfeten" path="res://stages/boards/default_board_layout_config.tres" id="2_layout"]
+[ext_resource type="Resource" uid="uid://bixppn3gnpsrh" path="res://stages/boards/default_board_view_config.tres" id="3_view"]
+[ext_resource type="Resource" path="res://stages/waves/default_wave_board_composition.tres" id="4_composition"]
+[ext_resource type="Resource" path="res://stages/boards/default_board_presentation_catalog_2d.tres" id="5_catalog"]
+[ext_resource type="Script" uid="uid://c7sookw53o0sv" path="res://shared/contracts/board_placeable_definition.gd" id="5_sr5kx"]
+[ext_resource type="Resource" path="res://pinball/objects/normal_bumper_definition.tres" id="6_normal"]
+[ext_resource type="Resource" path="res://pinball/objects/bounce_bumper_definition.tres" id="7_bounce"]
+[ext_resource type="Resource" path="res://pinball/objects/wall_definition.tres" id="8_wall"]
+[ext_resource type="Resource" path="res://pinball/objects/general_object_definition.tres" id="9_general"]
+[ext_resource type="Resource" path="res://pinball/flippers/standard_flipper_definition.tres" id="10_flipper_standard"]
+[ext_resource type="Resource" path="res://pinball/flippers/small_flipper_definition.tres" id="11_flipper_small"]
+[ext_resource type="Resource" path="res://relics/catalog/path_guide_relic_preview_definition.tres" id="12_relic"]
+
+[node name="BoardAuthoring2D" type="Node2D" unique_id=1713306520]
+script = ExtResource("1_mockup")
+layout_config = ExtResource("2_layout")
+view_config = ExtResource("3_view")
+composition_config = ExtResource("4_composition")
+object_definitions = Array[ExtResource("5_sr5kx")]([ExtResource("6_normal"), ExtResource("7_bounce"), ExtResource("8_wall"), ExtResource("9_general"), ExtResource("10_flipper_standard"), ExtResource("11_flipper_small"), ExtResource("12_relic")])
+presentation_catalog = ExtResource("5_catalog")

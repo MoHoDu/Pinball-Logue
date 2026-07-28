@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="ProgressionConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game_flow/progression_config.gd" id="1_config"]
+
+[resource]
+script = ExtResource("1_config")
+stage_count = 3
+normal_wave_count = 3

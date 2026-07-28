@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="FlipperMotionProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://pinball/flippers/flipper_motion_profile.gd" id="1_profile"]
+
+[resource]
+script = ExtResource("1_profile")
+length_board_ratio = 0.16
+width_board_ratio = 0.035
+activation_angle_degrees = 48.0
+activation_seconds = 0.075
+hold_seconds = 0.055
+return_seconds = 0.12
+base_hit_impulse_board_per_second = 0.65
+parry_window_seconds = 0.06
+parry_impulse_multiplier = 1.8

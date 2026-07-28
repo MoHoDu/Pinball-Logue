@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="FlipperDefinition" format=3 uid="uid://cci5cqlmu22tl"]
+
+[ext_resource type="Script" uid="uid://dr6wjdve4k1yx" path="res://pinball/flippers/flipper_definition.gd" id="1_flipper"]
+[ext_resource type="Resource" path="res://pinball/flippers/small_flipper_motion_profile.tres" id="2_profile"]
+
+[resource]
+script = ExtResource("1_flipper")
+motion_profile = ExtResource("2_profile")
+content_id = &"flipper_small"
+display_name = "소형 플리퍼"
+object_type = "flipper"
+indestructible = true
+max_durability = 0

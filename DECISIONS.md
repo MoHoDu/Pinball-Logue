@@ -1,0 +1,96 @@
+---
+title: Pinball_Logue 로컬 의사결정 기록
+summary: 사용자 승인으로 확정된 저장소 구현 방향의 변경 전후, 이유와 영향 범위를 기록한다.
+document_type: decision-log
+scope: repository
+status: active
+read_when:
+  - 중요한 구현 방향이나 게임 기획이 변경됐는지 확인할 때
+  - 기능 SPEC과 코드의 결정 근거를 추적할 때
+---
+
+# 로컬 의사결정 기록
+
+## DEC-20260727-01 — 3D 런타임과 차원 독립 경계 채택
+
+- 상태: superseded by `DEC-20260728-02`
+- 요청자: 사용자
+- 변경 전: 임시 메인 씬은 `Node2D`이며 외부 조준·발사 상세안은 Physics2D 노드와 API를 전제로 했다.
+- 변경 후: 현재 플레이 공간은 3D로 구현하고, 도메인 상태·명령·결과는 장면 차원과 분리한다. 메뉴 UI는 `Control`, 웨이브·보스 플레이 공간은 `Node3D`를 사용한다. 미래 2D 구현은 동일한 공개 계약을 사용하는 별도 어댑터로 교체할 수 있게 한다.
+- 변경 이유: 현재 3D 플레이 요구를 충족하면서 이후 2D↔3D 전환 비용과 기능 간 결합을 제한하기 위해서다.
+- 영향받는 기능: `app/`, `pinball/`, `stages/`, `ui/`, `presentation/`, `integration/`
+- 갱신 문서: `app/SPEC.md`, `integration/.work/basic-system-foundation/PLAN.md`
+- 검증 기준: 3D 웨이브·보스 씬의 독립 로드, UI 화면과 플레이 공간의 분리, 도메인 코드의 2D·3D 노드 타입 비의존, Web 내보내기
+- 승인 기록: 2026-07-27 사용자가 마스터 계획과 1단계 구현을 승인함.
+
+## DEC-20260728-02 — 2D 목업과 2D·3D 교체 가능 보드 채택
+
+- 상태: approved
+- 요청자: 사용자
+- 변경 전: 플레이 공간은 `Node3D` 목업으로 고정하고 2D는 미래 별도 어댑터 후보로만 두었다. 일반 웨이브 수는 코드 상수 3으로 고정했고 단계마다 Web export·Chromium 검증을 수행했다.
+- 변경 후: 최종 2D·3D 그래픽은 미확정으로 유지하고 현재 목업은 `Node2D`로 제공한다. 보드 데이터와 진행 도메인은 차원에 의존하지 않으며 2D·3D 표현 어댑터가 같은 설정을 소비한다. 레퍼런스의 상단이 좁고 하단이 넓은 경사 원근을 기본 58° 시점으로 사용한다. 보드 시점과 웨이브 수는 `.tres`에서 수정·커스텀·테스트한다. 단계별 Web 빌드 검증은 생략하고 Web 최종 QA 또는 사용자 명시 요청 때만 수행한다.
+- 변경 이유: 그래픽 차원을 성급히 고정하지 않고 2D 목업으로 빠르게 검증하면서, 반복 조정이 필요한 시점·콘텐츠 수치를 코드 변경 없이 비교하기 위해서다.
+- 영향받는 기능: 루트 기준, `app/`, `game_flow/`, `stages/`, `presentation/`, `integration/`
+- 갱신 문서: `AGENTS.md`, `GAME_TERMS.md`, `GROUND_RULES.md`, `app/SPEC.md`, `game_flow/SPEC.md`, `integration/.work/basic-system-foundation/PLAN.md`
+- 검증 기준: 기본 `.tres` 로드, 보드 각도 변경 시 2D 목업 형상 변화, 웨이브 수 변경 시 보스 진입 시점 변화, 도메인·보드 데이터의 2D·3D 노드 비의존, Godot 프로젝트·Desktop 실행
+- 승인 기록: 2026-07-28 사용자가 첨부 핀볼 레퍼런스와 함께 다섯 변경 사항을 명시하고 현재 구현과 후속 단계 계획에 적용하도록 요청함.
+
+## DEC-20260728-03 — 기획자용 보드 제작 도구와 배치 계층 분리
+
+- 상태: approved
+- 요청자: 사용자
+- 변경 전: 기획자는 `.tres` 인스펙터 배열에서 보드 외곽선과 앵커 좌표를 직접 입력하며, 배치 지점과 실제 오브젝트 원형이 연결되지 않았다. 보드 목업은 범퍼·플리퍼·유물 슬롯과 공을 코드로 직접 그렸다.
+- 변경 후: 기획자는 Godot 2D 제작 화면에서 보드 외곽선 정점, 배치 지점과 플리퍼를 마우스로 이동한다. 보드 템플릿은 외곽선과 빈 배치 지점을, 웨이브 배치는 지점과 오브젝트 원형의 연결을, 각 기능은 범퍼·플리퍼·유물 원형을 소유한다. 오브젝트 원형의 규칙 데이터와 현재 2D 디자인·미래 3D 디자인을 분리한다. 플리퍼는 웨이브마다 1~4개를 외곽선에 부착한다. 공은 보드 설정과 편집 미리보기에서 제외하고 발사 지점만 남긴다.
+- 변경 이유: Godot·GDScript·좌표 체계를 모르는 비개발자도 보드를 복제하고 마우스로 구성하며, 같은 보드 형태에 서로 다른 웨이브 콘텐츠와 디자인을 안전하게 적용할 수 있게 하기 위해서다.
+- 영향받는 기능: `stages/boards`, `stages/waves`, `pinball/objects`, `pinball/flippers`, `relics/catalog`, `integration`, Godot 편집기 플러그인
+- 갱신 문서: `GAME_TERMS.md`, `stages/boards/SPEC.md`, `stages/waves/SPEC.md`, `pinball/objects/SPEC.md`, `pinball/flippers/SPEC.md`, `relics/catalog/SPEC.md`, `integration/.work/basic-system-foundation/PLAN.md`, `integration/.work/basic-system-foundation/QA.md`
+- 검증 기준: GDScript·파일 직접 편집·좌표 계산 없이 보드 복제→외곽선 편집→지점 추가·이동→원형 지정·교체→플리퍼 1~4개 외곽선 이동→저장·실행 확인, Undo/Redo, 한국어 오류 안내, 공 참조 부재, 차원 독립 계약, 기존 진행 회귀
+- 승인 기록: 2026-07-28 사용자가 여덟 가지 제작 요구를 제시하고 3B-1~7 전체 구현, 서브 에이전트 활용, 독립 QA와 지정 Confluence 가이드 갱신을 승인함.
+
+## DEC-20260729-01 — 차원 독립 발사 명령과 교체 가능한 조준 방식
+
+- 상태: approved
+- 요청자: 사용자
+- 변경 전: 4단계는 단일 표준 공과 조준·발사 반복만 계획했으며 공 목록 수량, 상태별 키 입력, 조준 장치 교체와 미래 3D 물리 연결 방식이 확정되지 않았다.
+- 변경 후: 목업 웨이브는 공 1~3개를 가져가며 `1`·`2`·`3` 또는 방향키로 남은 공을 선택한다. `Space`로 선택을 확정하고, `.tres` 설정에서 `방향키 조준`과 `마우스 조준` 중 하나를 선택한 뒤 `Space`로 발사한다. 공 진행 중에는 방향키가 보드 상대 위치에 따라 고유 지정된 플리퍼를 선택하고 `Space`가 선택 플리퍼를 작동한다. 발사 명령은 차원 독립 보드 평면의 방향·세기를 전달하며 현재 `RigidBody2D`와 미래 `RigidBody3D`는 별도 물리 어댑터 전략으로 소비한다. 내부 GDScript·`.tres` 속성명은 영문으로 유지하고 Godot 인스펙터와 미래 개발자 모드에는 한국어 이름·설명·단위를 표시한다.
+- 변경 이유: 동일한 키를 공 선택·조준·발사·플리퍼 조작에 안전하게 재사용하고, 기획자가 입력 방식과 물리 수치를 코드 없이 비교하면서 최종 2D·3D 방향을 미확정으로 유지하기 위해서다.
+- 영향받는 기능: `pinball/ball`, `pinball/launcher`, `pinball/shot`, `pinball/flippers`, `stages/boards`, `ui/gameplay`, `shared/contracts`, Godot 편집기 플러그인, `integration`
+- 갱신 문서: `GROUND_RULES.md`, `GAME_TERMS.md`, `pinball/ball/SPEC.md`, `pinball/launcher/SPEC.md`, `pinball/shot/SPEC.md`, `pinball/flippers/SPEC.md`, `stages/boards/SPEC.md`, `integration/.work/basic-system-foundation/PLAN.md`, `integration/.work/basic-system-foundation/QA.md`
+- 검증 기준: 공 목록 1~3개, 숫자·방향키 선택 일치, 두 조준 방식의 동일 발사 명령, 상태별 `Space` 중복 없음, 활성 공 0/1, 낙하 결과 1회, 플리퍼 방향 중복 거부, 2D 어댑터 외 차원 노드 역참조 없음, 인스펙터 한국어 표시와 영문 직렬화 속성 보존
+- 승인 기록: 2026-07-29 사용자가 두 조준 방식을 설정으로 교체 가능하게 하고 나머지 확정 계획대로 3B 보완과 4단계를 진행하도록 승인함.
+
+## DEC-20260729-02 — 방향키별 플리퍼 조작 대상과 좌우 동시 작동
+
+- 상태: approved
+- 요청자: 사용자
+- 변경 전: 공 진행 중 각 방향키는 실제 플리퍼 하나에 고유 배정되고 `Space`는 선택한 플리퍼 하나의 작동 요청만 보냈다.
+- 변경 후: 각 방향키는 `왼쪽만`, `오른쪽만`, `좌우 쌍` 중 하나인 플리퍼 조작 대상에 고유 배정된다. 공 진행 중 방향키로 대상을 선택하고 `Space`를 누르면 왼쪽만·오른쪽만은 해당 플리퍼 하나, 좌우 쌍은 두 플리퍼가 같은 물리 틱에 함께 작동한다. 작동은 설정된 유지 뒤 자동 복귀하고, 공 패링은 공 최대 속도를 넘지 않으며 회전 방향은 왼쪽·오른쪽 역할에서 자동 계산한다.
+- 변경 이유: 보드 위치마다 단일 플리퍼와 전형적인 좌우 동시 플리퍼 조작을 같은 입력 체계로 구성하고, 기획자가 웨이브별로 조작 단위를 바꿀 수 있게 하기 위해서다.
+- 영향받는 기능: `pinball/flippers`, `stages/boards`, `stages/waves`, `ui/gameplay`, `shared/contracts`, Godot 편집기 플러그인, `integration`
+- 갱신 문서: `GAME_TERMS.md`, `pinball/flippers/SPEC.md`, `integration/.work/basic-system-foundation/PLAN.md`, `integration/.work/basic-system-foundation/QA.md`
+- 검증 기준: 실제 플리퍼 1~4개, 세 조작 구성, 조작 대상별 고유 방향키, 좌우 같은 물리 틱 작동, 중복 힘·복귀 불능 없음, 패링 1회와 공 최대 속도 준수, 차원 독립 명령
+- 승인 기록: 2026-07-29 사용자가 세 권장안을 수용한 뒤 방향키가 선택하는 구성을 왼쪽만·오른쪽만·좌우 쌍으로 명확히 하고 20분 목표의 5단계 구현을 승인함.
+
+## DEC-20260729-03 — 플리퍼 조작 대상의 필수 기본 선택
+
+- 상태: approved
+- 요청자: 사용자
+- 변경 전: 공 발사 전과 발사·낙하 전환 직후에는 선택된 플리퍼 조작 대상이 없었으며, 공 진행 중 방향키를 먼저 눌러야 `Space`로 작동할 수 있었다.
+- 변경 후: 유효한 웨이브에는 선택된 플리퍼 조작 대상이 항상 하나 존재한다. 최초 선택은 사용 가능한 방향 중 `아래 → 왼쪽 → 오른쪽 → 위` 우선순위로 자동 결정하며 발사·낙하 전환에서도 선택을 유지한다. 사용 불가능한 방향을 눌러도 기존 선택을 비우지 않는다.
+- 변경 이유: 공이 플리퍼 구간에 빠르게 도달했을 때 별도 선택 입력 없이 즉시 타이밍 입력을 할 수 있게 하고, `선택 플리퍼: 없음` 상태로 인한 조작 누락을 제거하기 위해서다.
+- 영향받는 기능: `pinball/flippers`, 현재 웨이브 플레이 화면, `integration`
+- 갱신 문서: `pinball/flippers/SPEC.md`, `integration/.work/basic-system-foundation/PLAN.md`, `integration/.work/basic-system-foundation/QA.md`, `integration/.work/basic-system-foundation/daily/2026-07-29.md`
+- 검증 기준: 최초 선택 우선순위 고정, 기본 하단 좌우 쌍 자동 선택, 발사·낙하 뒤 선택 유지, 잘못된 방향 입력 뒤 기존 선택 보존, 유효한 플레이 상태에서 선택 없음 0회
+- 승인 기록: 2026-07-29 사용자가 최초 선택 우선순위를 아래·왼쪽·오른쪽·위로 지정하고 선택된 플리퍼가 없을 수 없다고 확정함.
+
+## DEC-20260729-04 — 개발자 모드의 플리퍼 묶음·드레인 통합 편집
+
+- 상태: approved
+- 요청자: 사용자
+- 변경 전: 플리퍼 조작 대상은 웨이브 배치 인스펙터에서 내부 지점 이름을 직접 입력하고, 드레인 위치·너비·감지 깊이는 보드 설계도·보기 설정·플레이 보드 노드에 나뉘어 있었다. 새 보드 생성도 보드별 보기 설정을 함께 복제하지 않았다.
+- 변경 후: 12단계 구조를 유지하면서 11단계 개발자 모드에 보드 위 플리퍼 지점 클릭 기반 단일·좌우 쌍 편집과 드레인 위치·너비·감지 깊이 통합 편집을 포함한다. 드레인 실제 감지 영역을 화면에 표시하고, 새 보드는 설계도·웨이브 배치·보기 설정 복제본을 함께 생성·연결한다. Godot 보드 제작 도구와 개발자 모드는 같은 차원 독립 설정과 한국어 표시 메타데이터를 사용한다.
+- 변경 이유: Godot·GDScript·내부 지점 이름을 모르는 기획자가 여러 파일과 노드를 오가지 않고 보드 화면에서 조작 구역을 이해하고 안전하게 편집할 수 있게 하기 위해서다.
+- 영향받는 기능: `stages/boards`, `stages/waves`, `pinball/flippers`, Godot 보드 제작 도구, 11단계 개발자 모드, `integration`
+- 갱신 문서: `integration/.work/basic-system-foundation/PLAN.md`, `integration/.work/basic-system-foundation/QA.md`, `integration/.work/basic-system-foundation/daily/2026-07-29.md`
+- 검증 기준: 플리퍼 지점 이름 수동 입력 0회, 단일·쌍 클릭 편집과 방향 강조, 드레인 위치·너비·깊이 통합 편집과 감지 영역 미리보기, Undo/Redo, 복제본 저장·재열기·원상 복구, 출시 빌드 비활성, 비개발자 가이드 수행
+- 승인 기록: 2026-07-29 사용자가 현재 편집 UX의 한계에 동의하고 개발자 모드 단계에 후속 작업으로 추가한 뒤 현재 Step 5 변경을 커밋하도록 요청함.

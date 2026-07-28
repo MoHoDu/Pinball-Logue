@@ -1,0 +1,62 @@
+[gd_resource type="Resource" script_class="BoardLayoutConfig" format=3 uid="uid://5cjypv2pj0rc"]
+
+[ext_resource type="Script" uid="uid://bi2atostil7by" path="res://stages/boards/board_layout_config.gd" id="1_layout"]
+[ext_resource type="Script" uid="uid://g4bvqni1qyts" path="res://stages/boards/board_anchor_config.gd" id="2_anchor"]
+
+[sub_resource type="Resource" id="Resource_launch"]
+script = ExtResource("2_anchor")
+anchor_id = &"launch_main"
+anchor_type = "launch"
+board_position = Vector2(0.38, 0.24)
+
+[sub_resource type="Resource" id="Resource_drain"]
+script = ExtResource("2_anchor")
+anchor_id = &"drain_main"
+anchor_type = "drain"
+board_position = Vector2(0, 0.46)
+
+[sub_resource type="Resource" id="Resource_bumper_top"]
+script = ExtResource("2_anchor")
+anchor_id = &"bumper_top"
+board_position = Vector2(0, -0.34)
+
+[sub_resource type="Resource" id="Resource_bumper_mid_left"]
+script = ExtResource("2_anchor")
+anchor_id = &"bumper_mid_left"
+board_position = Vector2(-0.34, 0)
+
+[sub_resource type="Resource" id="Resource_bumper_mid_right"]
+script = ExtResource("2_anchor")
+anchor_id = &"bumper_mid_right"
+board_position = Vector2(0.34, 0)
+
+[sub_resource type="Resource" id="Resource_flipper_left"]
+script = ExtResource("2_anchor")
+anchor_id = &"flipper_left"
+anchor_type = "flipper"
+board_position = Vector2(-0.32, 0.32)
+rotation_degrees = 12.0
+
+[sub_resource type="Resource" id="Resource_flipper_right"]
+script = ExtResource("2_anchor")
+anchor_id = &"flipper_right"
+anchor_type = "flipper"
+board_position = Vector2(0.32, 0.32)
+rotation_degrees = 168.0
+
+[sub_resource type="Resource" id="Resource_relic_left"]
+script = ExtResource("2_anchor")
+anchor_id = &"relic_left"
+anchor_type = "relic_slot"
+board_position = Vector2(-0.18, 0.12)
+
+[sub_resource type="Resource" id="Resource_relic_right"]
+script = ExtResource("2_anchor")
+anchor_id = &"relic_right"
+anchor_type = "relic_slot"
+board_position = Vector2(0.18, 0.12)
+
+[resource]
+script = ExtResource("1_layout")
+boundary_points = PackedVector2Array(-0.3, -0.5, 0.3, -0.5, 0.5, 0.3, 0, 0.5, -0.5, 0.3)
+anchors = Array[ExtResource("2_anchor")]([SubResource("Resource_launch"), SubResource("Resource_drain"), SubResource("Resource_bumper_top"), SubResource("Resource_bumper_mid_left"), SubResource("Resource_bumper_mid_right"), SubResource("Resource_flipper_left"), SubResource("Resource_flipper_right"), SubResource("Resource_relic_left"), SubResource("Resource_relic_right")])

@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="WaveBallLoadoutConfig" format=3 uid="uid://srs5p1rd5lix"]
+
+[ext_resource type="Script" uid="uid://ruyhc8at76qi" path="res://stages/waves/wave_ball_loadout_config.gd" id="1_loadout"]
+[ext_resource type="Script" uid="uid://p4wla6ee7weh" path="res://stages/waves/wave_ball_slot_config.gd" id="2_slot"]
+[ext_resource type="Resource" path="res://pinball/ball/standard_ball_definition.tres" id="3_ball"]
+
+[sub_resource type="Resource" id="WaveBallSlotConfig_1"]
+script = ExtResource("2_slot")
+slot_id = &"ball_slot_1"
+ball_definition = ExtResource("3_ball")
+
+[sub_resource type="Resource" id="WaveBallSlotConfig_2"]
+script = ExtResource("2_slot")
+slot_id = &"ball_slot_2"
+ball_definition = ExtResource("3_ball")
+
+[sub_resource type="Resource" id="WaveBallSlotConfig_3"]
+script = ExtResource("2_slot")
+slot_id = &"ball_slot_3"
+ball_definition = ExtResource("3_ball")
+
+[resource]
+script = ExtResource("1_loadout")
+slots = Array[ExtResource("2_slot")]([SubResource("WaveBallSlotConfig_1"), SubResource("WaveBallSlotConfig_2"), SubResource("WaveBallSlotConfig_3")])

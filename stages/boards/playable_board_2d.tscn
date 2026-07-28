@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://stages/boards/playable_board_2d.gd" id="1_playable"]
+[ext_resource type="PackedScene" path="res://stages/boards/board_mockup_2d.tscn" id="2_board"]
+
+[node name="PlayableBoard2D" type="Node2D"]
+script = ExtResource("1_playable")
+
+[node name="BoardMockup2D" parent="." instance=ExtResource("2_board")]
