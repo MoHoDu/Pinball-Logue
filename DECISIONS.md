@@ -46,3 +46,15 @@ read_when:
 - 갱신 문서: `GAME_TERMS.md`, `stages/boards/SPEC.md`, `stages/waves/SPEC.md`, `pinball/objects/SPEC.md`, `pinball/flippers/SPEC.md`, `relics/catalog/SPEC.md`, `integration/.work/basic-system-foundation/PLAN.md`, `integration/.work/basic-system-foundation/QA.md`
 - 검증 기준: GDScript·파일 직접 편집·좌표 계산 없이 보드 복제→외곽선 편집→지점 추가·이동→원형 지정·교체→플리퍼 1~4개 외곽선 이동→저장·실행 확인, Undo/Redo, 한국어 오류 안내, 공 참조 부재, 차원 독립 계약, 기존 진행 회귀
 - 승인 기록: 2026-07-28 사용자가 여덟 가지 제작 요구를 제시하고 3B-1~7 전체 구현, 서브 에이전트 활용, 독립 QA와 지정 Confluence 가이드 갱신을 승인함.
+
+## DEC-20260729-01 — 차원 독립 발사 명령과 교체 가능한 조준 방식
+
+- 상태: approved
+- 요청자: 사용자
+- 변경 전: 4단계는 단일 표준 공과 조준·발사 반복만 계획했으며 공 목록 수량, 상태별 키 입력, 조준 장치 교체와 미래 3D 물리 연결 방식이 확정되지 않았다.
+- 변경 후: 목업 웨이브는 공 1~3개를 가져가며 `1`·`2`·`3` 또는 방향키로 남은 공을 선택한다. `Space`로 선택을 확정하고, `.tres` 설정에서 `방향키 조준`과 `마우스 조준` 중 하나를 선택한 뒤 `Space`로 발사한다. 공 진행 중에는 방향키가 보드 상대 위치에 따라 고유 지정된 플리퍼를 선택하고 `Space`가 선택 플리퍼를 작동한다. 발사 명령은 차원 독립 보드 평면의 방향·세기를 전달하며 현재 `RigidBody2D`와 미래 `RigidBody3D`는 별도 물리 어댑터 전략으로 소비한다. 내부 GDScript·`.tres` 속성명은 영문으로 유지하고 Godot 인스펙터와 미래 개발자 모드에는 한국어 이름·설명·단위를 표시한다.
+- 변경 이유: 동일한 키를 공 선택·조준·발사·플리퍼 조작에 안전하게 재사용하고, 기획자가 입력 방식과 물리 수치를 코드 없이 비교하면서 최종 2D·3D 방향을 미확정으로 유지하기 위해서다.
+- 영향받는 기능: `pinball/ball`, `pinball/launcher`, `pinball/shot`, `pinball/flippers`, `stages/boards`, `ui/gameplay`, `shared/contracts`, Godot 편집기 플러그인, `integration`
+- 갱신 문서: `GROUND_RULES.md`, `GAME_TERMS.md`, `pinball/ball/SPEC.md`, `pinball/launcher/SPEC.md`, `pinball/shot/SPEC.md`, `pinball/flippers/SPEC.md`, `stages/boards/SPEC.md`, `integration/.work/basic-system-foundation/PLAN.md`, `integration/.work/basic-system-foundation/QA.md`
+- 검증 기준: 공 목록 1~3개, 숫자·방향키 선택 일치, 두 조준 방식의 동일 발사 명령, 상태별 `Space` 중복 없음, 활성 공 0/1, 낙하 결과 1회, 플리퍼 방향 중복 거부, 2D 어댑터 외 차원 노드 역참조 없음, 인스펙터 한국어 표시와 영문 직렬화 속성 보존
+- 승인 기록: 2026-07-29 사용자가 두 조준 방식을 설정으로 교체 가능하게 하고 나머지 확정 계획대로 3B 보완과 4단계를 진행하도록 승인함.
