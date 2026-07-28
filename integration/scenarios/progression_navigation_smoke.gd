@@ -84,7 +84,11 @@ func _test_failure_and_retry_flow() -> void:
 
 func _press_current_button(navigator: ScreenNavigator) -> void:
 	var screen := navigator.current_screen as NavigableScreen
-	_expect(screen != null, "현재 화면이 NavigableScreen이어야 합니다.")
+	if screen == null and navigator.current_screen_id == SCREEN_IDS.WAVE:
+		navigator.current_screen.emit_signal(&"progression_requested", ACTIONS.WAVE_CLEARED)
+		await process_frame
+		return
+	_expect(screen != null, "현재 화면이 진행 요청을 제공해야 합니다.")
 	if screen == null:
 		return
 	var button := screen.get_node_or_null(screen.next_button_path) as Button

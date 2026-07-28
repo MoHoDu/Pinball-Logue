@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="LaunchConfig" format=3 uid="uid://3fy585mhncu4"]
+
+[ext_resource type="Script" uid="uid://crusdy5jwflwu" path="res://pinball/launcher/launch_config.gd" id="1_config"]
+
+[resource]
+script = ExtResource("1_config")
+aim_mode = "direction_keys"
