@@ -1,8 +1,8 @@
-[gd_resource type="Resource" script_class="WaveBoardCompositionConfig" load_steps=8 format=3]
+[gd_resource type="Resource" script_class="WaveBoardCompositionConfig" format=3 uid="uid://iry006h426p6"]
 
-[ext_resource type="Script" path="res://stages/waves/wave_board_composition_config.gd" id="1_composition"]
-[ext_resource type="Script" path="res://stages/waves/board_placement_assignment_config.gd" id="2_assignment"]
-[ext_resource type="Resource" path="res://stages/boards/my_board_layout_config.tres" id="3_layout"]
+[ext_resource type="Script" uid="uid://bfphwjia2q85s" path="res://stages/waves/wave_board_composition_config.gd" id="1_composition"]
+[ext_resource type="Script" uid="uid://blfmnf5hgakhy" path="res://stages/waves/board_placement_assignment_config.gd" id="2_assignment"]
+[ext_resource type="Resource" uid="uid://5cjypv2pj0rc" path="res://stages/boards/my_board_layout_config.tres" id="3_layout"]
 
 [sub_resource type="Resource" id="Assignment_bumper_top"]
 script = ExtResource("2_assignment")

@@ -23,6 +23,12 @@ const HANDLE_HIT_RADIUS := 14.0
 const MAX_FLIPPER_COUNT := 4
 const FALLBACK_ANCHOR_SCRIPT_PATH := "res://stages/boards/board_anchor_config.gd"
 const ASSIGNMENT_SCRIPT_PATH := "res://stages/waves/board_placement_assignment_config.gd"
+const BoardContentPathPolicy := preload(
+	"res://addons/pinball_board_authoring/board_content_path_policy.gd"
+)
+const KoreanConfigInspectorPlugin := preload(
+	"res://addons/pinball_board_authoring/korean_config_inspector_plugin.gd"
+)
 
 var _edited_node: Node2D
 var _edit_mode := EditMode.NONE
@@ -37,13 +43,18 @@ var _toolbar_menu: MenuButton
 var _status_label: Label
 var _definition_option: OptionButton
 var _definition_detail_label: Label
-var _save_dialog: FileDialog
+var _duplicate_dialog: ConfirmationDialog
+var _board_id_input: LineEdit
+var _duplicate_path_label: Label
 var _message_dialog: AcceptDialog
 var _undo_redo: EditorUndoRedoManager
+var _korean_inspector_plugin: EditorInspectorPlugin
 
 
 func _enter_tree() -> void:
 	_undo_redo = get_undo_redo()
+	_korean_inspector_plugin = KoreanConfigInspectorPlugin.new()
+	add_inspector_plugin(_korean_inspector_plugin)
 	_build_dock()
 	_build_toolbar()
 	if _undo_redo != null and _undo_redo.has_signal("version_changed"):
@@ -63,8 +74,11 @@ func _exit_tree() -> void:
 	if _dock != null:
 		remove_control_from_docks(_dock)
 		_dock.queue_free()
-	if is_instance_valid(_save_dialog):
-		_save_dialog.queue_free()
+	if _korean_inspector_plugin != null:
+		remove_inspector_plugin(_korean_inspector_plugin)
+		_korean_inspector_plugin = null
+	if is_instance_valid(_duplicate_dialog):
+		_duplicate_dialog.queue_free()
 	if is_instance_valid(_message_dialog):
 		_message_dialog.queue_free()
 	_edited_node = null
@@ -220,13 +234,29 @@ func _build_dock() -> void:
 	_status_label.custom_minimum_size = Vector2(260.0, 88.0)
 	_dock.add_child(_status_label)
 
-	_save_dialog = FileDialog.new()
-	_save_dialog.title = "복제한 보드 설계도 저장"
-	_save_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
-	_save_dialog.access = FileDialog.ACCESS_RESOURCES
-	_save_dialog.filters = PackedStringArray(["*.tres ; Godot Resource"])
-	_save_dialog.file_selected.connect(_on_duplicate_file_selected)
-	get_editor_interface().get_base_control().add_child(_save_dialog)
+	_duplicate_dialog = ConfirmationDialog.new()
+	_duplicate_dialog.title = "복제해서 새 보드 만들기"
+	_duplicate_dialog.ok_button_text = "보드 만들기"
+	_duplicate_dialog.cancel_button_text = "취소"
+	var duplicate_content := VBoxContainer.new()
+	var id_help := Label.new()
+	id_help.text = "보드 ID를 입력하세요. 영문 소문자, 숫자와 밑줄(_)만 사용할 수 있습니다."
+	id_help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	duplicate_content.add_child(id_help)
+	_board_id_input = LineEdit.new()
+	_board_id_input.placeholder_text = "예: forest_gate"
+	_board_id_input.text_changed.connect(_on_board_id_changed)
+	duplicate_content.add_child(_board_id_input)
+	_duplicate_path_label = Label.new()
+	_duplicate_path_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	duplicate_content.add_child(_duplicate_path_label)
+	var undo_help := Label.new()
+	undo_help.text = "실행 취소는 현재 씬의 연결만 되돌립니다. 만든 보드 파일은 안전을 위해 삭제하지 않습니다."
+	undo_help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	duplicate_content.add_child(undo_help)
+	_duplicate_dialog.add_child(duplicate_content)
+	_duplicate_dialog.confirmed.connect(_on_duplicate_confirmed)
+	get_editor_interface().get_base_control().add_child(_duplicate_dialog)
 
 	_message_dialog = AcceptDialog.new()
 	_message_dialog.title = "보드 제작 도구"
@@ -276,63 +306,163 @@ func _on_toolbar_action(action_id: int) -> void:
 func _on_duplicate_requested() -> void:
 	if not _require_layout():
 		return
-	_save_dialog.current_dir = "res://stages/boards"
-	_save_dialog.current_file = "new_board_layout_config.tres"
-	_save_dialog.popup_centered_ratio(0.65)
+	if _get_composition_config() == null:
+		_show_message("보드 설계도와 함께 복제할 웨이브 배치표가 없습니다.\n현재 제작 씬의 웨이브 배치 설정을 먼저 확인하세요.")
+		return
+	_board_id_input.text = "new_board"
+	_board_id_input.select_all()
+	_on_board_id_changed(_board_id_input.text)
+	_duplicate_dialog.popup_centered(Vector2i(620, 250))
+	_board_id_input.grab_focus()
 
 
-func _on_duplicate_file_selected(path: String) -> void:
+func _on_board_id_changed(board_id: String) -> void:
+	if _duplicate_path_label == null:
+		return
+	var id_error := BoardContentPathPolicy.get_board_id_error(board_id)
+	if not id_error.is_empty():
+		_duplicate_path_label.text = "입력 확인: %s" % id_error
+		return
+	var paths := BoardContentPathPolicy.get_board_paths(board_id)
+	_duplicate_path_label.text = (
+		"저장 위치\n%s\n%s"
+		% [paths.get("layout", ""), paths.get("composition", "")]
+	)
+
+
+func _on_duplicate_confirmed() -> void:
+	_duplicate_board_resources(_board_id_input.text)
+
+
+func _duplicate_board_resources(board_id: String) -> bool:
 	var layout := _get_layout()
 	if layout == null:
 		_show_message("복제할 보드 설계도를 찾지 못했습니다.")
-		return
-	var save_path := path if path.ends_with(".tres") else path + ".tres"
-	var duplicate_layout: Resource = layout.duplicate(true)
-	var save_error := ResourceSaver.save(duplicate_layout, save_path)
-	if save_error != OK:
-		_show_message("보드 설계도 복제에 실패했습니다.\n저장 경로와 파일 권한을 확인하세요.\n오류 코드: %d" % save_error)
-		return
+		return false
 	var original_composition := _get_composition_config()
-	var duplicate_composition: Resource
-	var composition_save_path := ""
-	if original_composition != null:
-		duplicate_composition = original_composition.duplicate(true)
-		duplicate_composition.set("layout_config", duplicate_layout)
-		composition_save_path = save_path.get_basename() + "_wave_composition.tres"
-		var composition_save_error := ResourceSaver.save(
-			duplicate_composition,
-			composition_save_path
+	if original_composition == null:
+		_show_message("보드 설계도와 함께 복제할 웨이브 배치표를 찾지 못했습니다.")
+		return false
+	var id_error := BoardContentPathPolicy.get_board_id_error(board_id)
+	if not id_error.is_empty():
+		_show_message(id_error)
+		return false
+	var paths := BoardContentPathPolicy.get_board_paths(board_id)
+	var collision_error := BoardContentPathPolicy.get_path_collision_error(paths)
+	if not collision_error.is_empty():
+		_show_message(collision_error)
+		return false
+	var directory_path := String(paths["directory"])
+	var layout_path := String(paths["layout"])
+	var composition_path := String(paths["composition"])
+	var directory_error := DirAccess.make_dir_recursive_absolute(
+		ProjectSettings.globalize_path(directory_path)
+	)
+	if directory_error != OK:
+		_show_message("새 보드 폴더를 만들지 못했습니다.\n경로: %s\n오류 코드: %d" % [directory_path, directory_error])
+		return false
+	var duplicate_layout: Resource = layout.duplicate(true)
+	var save_error := ResourceSaver.save(duplicate_layout, layout_path)
+	if save_error != OK:
+		_remove_new_board_directory(directory_path, [layout_path])
+		_show_message("보드 설계도 복제에 실패했습니다.\n저장 경로와 파일 권한을 확인하세요.\n오류 코드: %d" % save_error)
+		return false
+	var saved_layout := ResourceLoader.load(
+		layout_path,
+		"Resource",
+		ResourceLoader.CACHE_MODE_IGNORE
+	) as Resource
+	if saved_layout == null:
+		_remove_new_board_directory(directory_path, [layout_path])
+		_show_message("저장한 보드 설계도를 다시 불러오지 못해 새 보드 생성을 취소했습니다.")
+		return false
+	var duplicate_composition: Resource = original_composition.duplicate(true)
+	duplicate_composition.set("layout_config", saved_layout)
+	var composition_save_error := ResourceSaver.save(
+		duplicate_composition,
+		composition_path
+	)
+	if composition_save_error != OK:
+		var cleanup_errors := _remove_new_board_directory(
+			directory_path,
+			[layout_path, composition_path]
 		)
-		if composition_save_error != OK:
-			_show_message(
-				"보드 설계도는 저장했지만 웨이브 배치 복제에 실패했습니다.\n"
-				+ "오류 코드: %d" % composition_save_error
-			)
-			return
+		var cleanup_message := ""
+		if not cleanup_errors.is_empty():
+			cleanup_message = "\n자동 정리에 실패한 새 파일을 확인하세요:\n" + "\n".join(cleanup_errors)
+		_show_message(
+			"웨이브 배치 복제에 실패해 새 보드 생성을 취소했습니다.\n오류 코드: %d%s"
+			% [composition_save_error, cleanup_message]
+		)
+		return false
+	var saved_composition := ResourceLoader.load(
+		composition_path,
+		"Resource",
+		ResourceLoader.CACHE_MODE_IGNORE
+	) as Resource
+	var linked_layout := (
+		saved_composition.get("layout_config") as Resource
+		if saved_composition != null
+		else null
+	)
+	if (
+		saved_composition == null
+		or linked_layout == null
+		or linked_layout.resource_path != layout_path
+	):
+		var cleanup_errors := _remove_new_board_directory(
+			directory_path,
+			[layout_path, composition_path]
+		)
+		var cleanup_message := ""
+		if not cleanup_errors.is_empty():
+			cleanup_message = "\n자동 정리에 실패한 새 파일을 확인하세요:\n" + "\n".join(cleanup_errors)
+		_show_message(
+			"웨이브 배치표가 별도 보드 설계도 파일과 연결되지 않아 새 보드 생성을 취소했습니다.%s"
+			% cleanup_message
+		)
+		return false
 	_undo_redo.create_action("보드 설계도와 웨이브 배치 함께 복제")
-	_undo_redo.add_do_property(_edited_node, &"layout_config", duplicate_layout)
+	_undo_redo.add_do_property(_edited_node, &"layout_config", saved_layout)
 	_undo_redo.add_undo_property(_edited_node, &"layout_config", layout)
-	if original_composition != null:
-		_undo_redo.add_do_property(
-			_edited_node,
-			&"composition_config",
-			duplicate_composition
-		)
-		_undo_redo.add_undo_property(
-			_edited_node,
-			&"composition_config",
-			original_composition
-		)
+	_undo_redo.add_do_property(
+		_edited_node,
+		&"composition_config",
+		saved_composition
+	)
+	_undo_redo.add_undo_property(
+		_edited_node,
+		&"composition_config",
+		original_composition
+	)
 	_undo_redo.commit_action()
-	var saved_paths := save_path
-	if not composition_save_path.is_empty():
-		saved_paths += "\n" + composition_save_path
+	get_editor_interface().get_resource_filesystem().scan()
 	_show_message(
-		"새 보드 설계도와 웨이브 배치를 함께 만들고 현재 씬에 연결했습니다.\n%s"
-		% saved_paths
+		"새 보드 설계도와 웨이브 배치를 함께 만들고 현재 씬에 연결했습니다.\n%s\n%s\n\n실행 취소는 현재 씬의 연결만 되돌리며, 만든 파일은 삭제하지 않습니다."
+		% [layout_path, composition_path]
 	)
 	_update_status()
 	update_overlays()
+	return true
+
+
+func _remove_new_board_directory(
+	directory_path: String,
+	created_file_paths: Array[String]
+) -> PackedStringArray:
+	var cleanup_errors := PackedStringArray()
+	for file_path in created_file_paths:
+		if not FileAccess.file_exists(file_path):
+			continue
+		var file_error := DirAccess.remove_absolute(ProjectSettings.globalize_path(file_path))
+		if file_error != OK:
+			cleanup_errors.append(file_path)
+	var global_directory := ProjectSettings.globalize_path(directory_path)
+	if DirAccess.dir_exists_absolute(global_directory):
+		var directory_error := DirAccess.remove_absolute(global_directory)
+		if directory_error != OK:
+			cleanup_errors.append(directory_path)
+	return cleanup_errors
 
 
 func _on_boundary_mode_requested() -> void:

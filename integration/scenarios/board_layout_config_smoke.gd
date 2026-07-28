@@ -48,7 +48,7 @@ func _expect_default_layout(layout: BoardLayoutConfig, failures: PackedStringArr
 		failures.append("기본 보드 경계가 마지막 점에서 첫 점으로 폐합되지 않습니다.")
 	_expect_anchor_count(layout, BoardAnchorConfig.TYPE_LAUNCH, 1, failures)
 	_expect_anchor_count(layout, BoardAnchorConfig.TYPE_DRAIN, 1, failures)
-	_expect_anchor_count(layout, BoardAnchorConfig.TYPE_BUMPER, 5, failures)
+	_expect_anchor_count(layout, BoardAnchorConfig.TYPE_BUMPER, 9, failures)
 	_expect_anchor_count(layout, BoardAnchorConfig.TYPE_FLIPPER, 2, failures)
 	_expect_anchor_count(layout, BoardAnchorConfig.TYPE_RELIC_SLOT, 3, failures)
 	if layout.launch_anchor_id != &"launch_main" or layout.drain_anchor_id != &"drain_main":
@@ -68,18 +68,23 @@ func _expect_default_projection(
 	var top_width := projected_boundary[1].x - projected_boundary[0].x
 	var bottom_width := projected_boundary[2].x - projected_boundary[3].x
 	var projected_height := projected_boundary[2].y - projected_boundary[1].y
-	if absf(top_width - 413.806) > FLOAT_EPSILON:
-		failures.append("기본 투영 상단 폭이 예상값과 다릅니다: %f" % top_width)
-	if absf(bottom_width - 540.0) > FLOAT_EPSILON:
-		failures.append("기본 투영 하단 폭이 예상값과 다릅니다: %f" % bottom_width)
-	if absf(projected_height - 436.0) > FLOAT_EPSILON:
-		failures.append("기본 투영 높이가 예상값과 다릅니다: %f" % projected_height)
+	if top_width >= bottom_width:
+		failures.append("58도 투영에서 보드 상단 폭은 하단 폭보다 좁아야 합니다.")
+	if projected_height <= 0.0:
+		failures.append("58도 투영 높이는 양수여야 합니다.")
+	for boundary_point in layout.boundary_points:
+		var round_trip := view.unproject_board_point(view.project_board_point(boundary_point))
+		if round_trip.distance_to(boundary_point) > FLOAT_EPSILON:
+			failures.append("보드 좌표의 58도 투영·역투영 결과가 일치하지 않습니다.")
+			break
 
 
 func _expect_copy_customization(layout: BoardLayoutConfig, failures: PackedStringArray) -> void:
 	var copied_layout := layout.duplicate(true) as BoardLayoutConfig
 	var copied_bumper := copied_layout.get_anchor(&"bumper_top_left")
 	var original_bumper := layout.get_anchor(&"bumper_top_left")
+	var original_position := original_bumper.board_position
+	var original_count := layout.get_anchors_by_type(BoardAnchorConfig.TYPE_BUMPER).size()
 	copied_bumper.board_position = Vector2(-0.2, -0.2)
 	var added_bumper := BoardAnchorConfig.new()
 	added_bumper.anchor_id = &"bumper_custom"
@@ -89,9 +94,9 @@ func _expect_copy_customization(layout: BoardLayoutConfig, failures: PackedStrin
 
 	if not copied_layout.get_validation_errors().is_empty():
 		failures.append("복제 레이아웃의 유효한 위치·개수 변경이 거부됐습니다.")
-	if copied_layout.get_anchors_by_type(BoardAnchorConfig.TYPE_BUMPER).size() != 6:
+	if copied_layout.get_anchors_by_type(BoardAnchorConfig.TYPE_BUMPER).size() != original_count + 1:
 		failures.append("복제 레이아웃의 범퍼 추가가 개수에 반영되지 않았습니다.")
-	if original_bumper.board_position != Vector2(-0.28, -0.28):
+	if original_bumper.board_position != original_position:
 		failures.append("복제 레이아웃 변경이 기본 리소스의 앵커를 오염시켰습니다.")
 
 

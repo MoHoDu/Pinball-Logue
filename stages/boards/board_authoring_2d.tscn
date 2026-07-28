@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cf83comtoph5"]
 
-[ext_resource type="Script" uid="uid://c7njl2780a311" path="res://stages/boards/board_mockup_2d.gd" id="1_mockup"]
+[ext_resource type="Script" path="res://stages/boards/board_authoring_2d.gd" id="1_mockup"]
 [ext_resource type="Resource" uid="uid://c3wwcyewfeten" path="res://stages/boards/default_board_layout_config.tres" id="2_layout"]
 [ext_resource type="Resource" uid="uid://bixppn3gnpsrh" path="res://stages/boards/default_board_view_config.tres" id="3_view"]
 [ext_resource type="Resource" path="res://stages/waves/default_wave_board_composition.tres" id="4_composition"]
@@ -15,7 +15,6 @@
 [ext_resource type="Resource" path="res://relics/catalog/path_guide_relic_preview_definition.tres" id="12_relic"]
 
 [node name="BoardAuthoring2D" type="Node2D" unique_id=1713306520]
-position = Vector2(640, 360)
 script = ExtResource("1_mockup")
 layout_config = ExtResource("2_layout")
 view_config = ExtResource("3_view")

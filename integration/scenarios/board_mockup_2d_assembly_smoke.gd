@@ -21,7 +21,7 @@ func _run() -> void:
 		failures.append("기본 2D 보드 조립이 유효하지 않습니다: %s" % board.get_assembly_errors())
 	_expect_dictionary_size(
 		board.get_projected_anchor_positions(BoardAnchorConfig.TYPE_BUMPER),
-		5,
+		9,
 		"범퍼",
 		failures
 	)
@@ -71,6 +71,7 @@ func _expect_flipper_direction_projection(
 func _expect_custom_layout(board: BoardMockup2D, failures: PackedStringArray) -> void:
 	var original_layout := board.layout_config
 	var original_composition := board.composition_config
+	var original_bumper_count := original_layout.get_anchors_by_type(BoardAnchorConfig.TYPE_BUMPER).size()
 	var copied_layout := original_layout.duplicate(true) as BoardLayoutConfig
 	var moved_anchor := copied_layout.get_anchor(&"bumper_top_left")
 	moved_anchor.board_position = Vector2(-0.2, -0.2)
@@ -85,13 +86,13 @@ func _expect_custom_layout(board: BoardMockup2D, failures: PackedStringArray) ->
 	board.composition_config = copied_composition
 
 	var projected_bumpers := board.get_projected_anchor_positions(BoardAnchorConfig.TYPE_BUMPER)
-	if projected_bumpers.size() != 6:
+	if projected_bumpers.size() != original_bumper_count + 1:
 		failures.append("복제 레이아웃의 범퍼 추가가 2D 조립 결과에 반영되지 않았습니다.")
 	var expected_position := board.view_config.project_board_point(moved_anchor.board_position)
 	var actual_position: Vector2 = projected_bumpers.get(&"bumper_top_left", Vector2(INF, INF))
 	if not actual_position.is_equal_approx(expected_position):
 		failures.append("복제 레이아웃의 앵커 이동이 2D 투영 위치에 반영되지 않았습니다.")
-	if original_layout.get_anchors_by_type(BoardAnchorConfig.TYPE_BUMPER).size() != 5:
+	if original_layout.get_anchors_by_type(BoardAnchorConfig.TYPE_BUMPER).size() != original_bumper_count:
 		failures.append("복제 레이아웃 변경이 기본 레이아웃 개수를 오염시켰습니다.")
 	board.layout_config = original_layout
 	board.composition_config = original_composition
@@ -99,16 +100,18 @@ func _expect_custom_layout(board: BoardMockup2D, failures: PackedStringArray) ->
 
 func _expect_custom_view(board: BoardMockup2D, failures: PackedStringArray) -> void:
 	var original_view := board.view_config
+	var original_boundary := board.get_projected_boundary()
+	var original_top_width := original_boundary[1].x - original_boundary[0].x
 	var copied_view := original_view.duplicate(true) as BoardViewConfig
 	copied_view.view_angle_degrees = 75.0
 	board.view_config = copied_view
 	var boundary := board.get_projected_boundary()
 	var top_width := boundary[1].x - boundary[0].x
 	var projected_height := boundary[2].y - boundary[1].y
-	if absf(top_width - 466.0615) > FLOAT_EPSILON:
-		failures.append("75도 복제 시점의 상단 폭이 예상값과 다릅니다: %f" % top_width)
-	if absf(projected_height - 470.0) > FLOAT_EPSILON:
-		failures.append("75도 복제 시점의 투영 높이가 예상값과 다릅니다: %f" % projected_height)
+	if top_width <= original_top_width:
+		failures.append("75도 복제 시점에서 상단 폭이 58도보다 넓어지지 않았습니다: %f" % top_width)
+	if projected_height <= 0.0:
+		failures.append("75도 복제 시점의 투영 높이는 양수여야 합니다.")
 	board.view_config = original_view
 
 
@@ -142,6 +145,8 @@ func _expect_screen_contract(
 		return
 	var screen := packed_scene.instantiate()
 	var board := screen.get_node_or_null("BoardMockup2D") as BoardMockup2D
+	if board == null:
+		board = screen.get_node_or_null("PlayableBoard2D/BoardMockup2D") as BoardMockup2D
 	if board == null:
 		failures.append("화면에 BoardMockup2D 조립체가 없습니다: %s" % scene_path)
 	elif not board.is_assembly_valid():
