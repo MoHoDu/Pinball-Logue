@@ -30,6 +30,7 @@ static func get_board_paths(board_id: String) -> Dictionary:
 		"board_id": board_id,
 		"directory": board_directory,
 		"layout": "%s/%s_layout.tres" % [board_directory, board_id],
+		"view": "%s/%s_view.tres" % [board_directory, board_id],
 		"composition": "%s/%s_wave_composition.tres" % [board_directory, board_id],
 	}
 
@@ -39,9 +40,10 @@ static func get_path_collision_error(paths: Dictionary) -> String:
 		return "보드 저장 경로를 만들 수 없습니다. 보드 ID를 확인해 주세요."
 	var directory := String(paths.get("directory", ""))
 	var layout_path := String(paths.get("layout", ""))
+	var view_path := String(paths.get("view", ""))
 	var composition_path := String(paths.get("composition", ""))
 	if DirAccess.dir_exists_absolute(ProjectSettings.globalize_path(directory)):
 		return "같은 보드 ID 폴더가 이미 있습니다: %s" % directory
-	if FileAccess.file_exists(layout_path) or FileAccess.file_exists(composition_path):
+	if FileAccess.file_exists(layout_path) or FileAccess.file_exists(view_path) or FileAccess.file_exists(composition_path):
 		return "같은 이름의 보드 파일이 이미 있습니다. 다른 보드 ID를 사용해 주세요."
 	return ""

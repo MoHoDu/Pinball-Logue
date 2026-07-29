@@ -9,26 +9,31 @@
 script = ExtResource("2_assignment")
 point_id = &"bumper_top"
 content_id = &"bumper_bounce"
+track_point_ids = PackedStringArray()
 
 [sub_resource type="Resource" id="Assignment_bumper_mid_left"]
 script = ExtResource("2_assignment")
 point_id = &"bumper_mid_left"
 content_id = &"bumper_normal"
+track_point_ids = PackedStringArray()
 
 [sub_resource type="Resource" id="Assignment_bumper_mid_right"]
 script = ExtResource("2_assignment")
 point_id = &"bumper_mid_right"
 content_id = &"bumper_normal"
+track_point_ids = PackedStringArray()
 
 [sub_resource type="Resource" id="Assignment_flipper_left"]
 script = ExtResource("2_assignment")
 point_id = &"flipper_left"
 content_id = &"flipper_standard"
+track_point_ids = PackedStringArray()
 
 [sub_resource type="Resource" id="Assignment_flipper_right"]
 script = ExtResource("2_assignment")
 point_id = &"flipper_right"
 content_id = &"flipper_small"
+track_point_ids = PackedStringArray()
 
 [sub_resource type="Resource" id="ControlTarget_bottom_pair"]
 script = ExtResource("4_control")

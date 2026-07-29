@@ -15,6 +15,12 @@ const REQUIRED_UI_TERMS := [
 	"일반 오브젝트 지점 추가",
 	"유물 배치 지점 추가",
 	"플리퍼 추가",
+	"배치 지점 선택·이동",
+	"선택 플리퍼 안쪽 방향 맞춤",
+	"보드 표시 15% 크게",
+	"웨이브에서 이 보드 시험",
+	"경로 지점 추가",
+	"발사 목표 지점 추가",
 	"선택 지점에 원형 적용",
 	"배치 비우기",
 	"오류 확인",
@@ -71,7 +77,9 @@ func _expect_editor_contract(failures: PackedStringArray) -> void:
 		"composition_config",
 		"object_definitions",
 		"duplicate_composition.set(\"layout_config\", saved_layout)",
+		"duplicate_composition.set(\"view_config\", saved_view)",
 		"linked_layout.resource_path != layout_path",
+		"linked_view.resource_path != view_path",
 		"BoardContentPathPolicy.get_board_paths",
 		"get_path_collision_error",
 		"실행 취소는 현재 씬의 연결만 되돌리며, 만든 파일은 삭제하지 않습니다.",
@@ -108,6 +116,7 @@ func _expect_content_path_policy(failures: PackedStringArray) -> void:
 	var expected_paths := {
 		"directory": "res://stages/boards/content/forest_gate",
 		"layout": "res://stages/boards/content/forest_gate/forest_gate_layout.tres",
+		"view": "res://stages/boards/content/forest_gate/forest_gate_view.tres",
 		"composition": "res://stages/boards/content/forest_gate/forest_gate_wave_composition.tres",
 	}
 	for path_kind in expected_paths:
@@ -119,19 +128,26 @@ func _expect_saved_board_reference_contract(failures: PackedStringArray) -> void
 	var timestamp := Time.get_ticks_usec()
 	var directory := "/private/tmp/pinball_logue_board_reference_%d" % timestamp
 	var layout_path := "%s/test_layout.tres" % directory
+	var view_path := "%s/test_view.tres" % directory
 	var composition_path := "%s/test_wave_composition.tres" % directory
+	var created_paths: Array[String] = [layout_path, view_path, composition_path]
 	if DirAccess.make_dir_recursive_absolute(directory) != OK:
 		failures.append("보드 참조 저장 검사용 임시 폴더를 만들지 못했습니다.")
 		return
 	var source_layout := load("res://stages/boards/default_board_layout_config.tres") as Resource
+	var source_view := load("res://stages/boards/default_board_view_config.tres") as Resource
 	var source_composition := load("res://stages/waves/default_wave_board_composition.tres") as Resource
-	if source_layout == null or source_composition == null:
+	if source_layout == null or source_view == null or source_composition == null:
 		failures.append("보드 참조 저장 검사용 기본 설정을 불러오지 못했습니다.")
-		_cleanup_board_reference_temp(directory, [layout_path, composition_path])
+		_cleanup_board_reference_temp(directory, created_paths)
 		return
 	if ResourceSaver.save(source_layout.duplicate(true), layout_path) != OK:
 		failures.append("보드 참조 저장 검사용 설계도를 저장하지 못했습니다.")
-		_cleanup_board_reference_temp(directory, [layout_path, composition_path])
+		_cleanup_board_reference_temp(directory, created_paths)
+		return
+	if ResourceSaver.save(source_view.duplicate(true), view_path) != OK:
+		failures.append("보드 참조 저장 검사용 보기 설정을 저장하지 못했습니다.")
+		_cleanup_board_reference_temp(directory, created_paths)
 		return
 	var saved_layout := ResourceLoader.load(
 		layout_path,
@@ -140,13 +156,23 @@ func _expect_saved_board_reference_contract(failures: PackedStringArray) -> void
 	) as Resource
 	if saved_layout == null:
 		failures.append("저장한 검사용 보드 설계도를 다시 불러오지 못했습니다.")
-		_cleanup_board_reference_temp(directory, [layout_path, composition_path])
+		_cleanup_board_reference_temp(directory, created_paths)
+		return
+	var saved_view := ResourceLoader.load(
+		view_path,
+		"Resource",
+		ResourceLoader.CACHE_MODE_IGNORE
+	) as Resource
+	if saved_view == null:
+		failures.append("저장한 검사용 보드 보기 설정을 다시 불러오지 못했습니다.")
+		_cleanup_board_reference_temp(directory, created_paths)
 		return
 	var saved_composition := source_composition.duplicate(true) as Resource
 	saved_composition.set("layout_config", saved_layout)
+	saved_composition.set("view_config", saved_view)
 	if ResourceSaver.save(saved_composition, composition_path) != OK:
 		failures.append("보드 참조 저장 검사용 웨이브 배치표를 저장하지 못했습니다.")
-		_cleanup_board_reference_temp(directory, [layout_path, composition_path])
+		_cleanup_board_reference_temp(directory, created_paths)
 		return
 	var reloaded_composition := ResourceLoader.load(
 		composition_path,
@@ -158,9 +184,16 @@ func _expect_saved_board_reference_contract(failures: PackedStringArray) -> void
 		if reloaded_composition != null
 		else null
 	)
+	var linked_view := (
+		reloaded_composition.get("view_config") as Resource
+		if reloaded_composition != null
+		else null
+	)
 	if linked_layout == null or linked_layout.resource_path != layout_path:
 		failures.append("재열기한 웨이브 배치표가 별도 보드 설계도 파일을 참조하지 않습니다.")
-	_cleanup_board_reference_temp(directory, [layout_path, composition_path])
+	if linked_view == null or linked_view.resource_path != view_path:
+		failures.append("재열기한 웨이브 배치표가 별도 보드 보기 설정 파일을 참조하지 않습니다.")
+	_cleanup_board_reference_temp(directory, created_paths)
 
 
 func _cleanup_board_reference_temp(directory: String, file_paths: Array[String]) -> void:

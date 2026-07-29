@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://stages/boards/prefabs_2d/board_object_preview_2d.gd" id="1_preview"]
+
+[node name="TrackBumper2D" type="Node2D"]
+script = ExtResource("1_preview")
+preview_kind = "bumper"
+primary_color = Color(0.403922, 0.823529, 0.576471, 1)
+secondary_color = Color(0.117647, 0.356863, 0.27451, 1)
+accent_color = Color(0.839216, 1, 0.776471, 1)
+preview_size = 30.0

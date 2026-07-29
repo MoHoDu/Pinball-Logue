@@ -6,6 +6,7 @@ const MIN_FLIPPER_COUNT := 1
 const MAX_FLIPPER_COUNT := 4
 
 @export var layout_config: BoardLayoutConfig
+@export var view_config: BoardViewConfig
 @export var assignments: Array[BoardPlacementAssignmentConfig] = []
 @export var flipper_control_targets: Array[FlipperControlTargetConfig] = []
 
@@ -62,6 +63,13 @@ func get_validation_errors(
 				"배치 지점의 역할과 오브젝트 종류가 맞지 않습니다: %s → %s"
 				% [assignment.point_id, assignment.content_id]
 			)
+		if definition is BumperDefinition:
+			errors.append_array(
+				_get_bumper_behavior_validation_errors(
+					assignment,
+					definition as BumperDefinition
+				)
+			)
 		if object_type_id == &"flipper":
 			assigned_flipper_count += 1
 
@@ -98,6 +106,8 @@ func get_resolved_placements(definitions_by_id: Dictionary) -> Array[Dictionary]
 			"definition": definitions_by_id[assignment.content_id],
 			"board_position": layout_config.get_resolved_anchor_position(point),
 			"rotation_degrees": point.rotation_degrees,
+			"track_path_board_positions": _get_track_path_board_positions(assignment),
+			"shot_target_board_position": _get_shot_target_board_position(assignment),
 		}
 		if point.get_type_id() == BoardAnchorConfig.TYPE_FLIPPER:
 			placement["inward_direction"] = layout_config.get_resolved_flipper_direction(point)
@@ -185,6 +195,64 @@ func _is_role_compatible(point_type: StringName, object_type: StringName) -> boo
 			return object_type == &"wall" or object_type == &"general"
 		_:
 			return false
+
+
+func _get_bumper_behavior_validation_errors(
+	assignment: BoardPlacementAssignmentConfig,
+	definition: BumperDefinition
+) -> PackedStringArray:
+	var errors := PackedStringArray()
+	if layout_config == null or assignment == null or definition == null:
+		return errors
+	var bumper_type := definition.get_bumper_type_id()
+	if bumper_type == BumperDefinition.BUMPER_TYPE_TRACK:
+		if assignment.track_point_ids.is_empty():
+			errors.append("경로 범퍼에는 경로 지점이 하나 이상 필요합니다: %s" % assignment.point_id)
+		for track_point_id in assignment.track_point_ids:
+			var track_point := layout_config.get_anchor(track_point_id)
+			if track_point == null:
+				errors.append("경로 범퍼가 참조하는 경로 지점을 찾을 수 없습니다: %s" % track_point_id)
+			elif track_point.get_type_id() != BoardAnchorConfig.TYPE_TRACK_POINT:
+				errors.append("경로 범퍼에는 경로 지점만 연결할 수 있습니다: %s" % track_point_id)
+	elif not assignment.track_point_ids.is_empty():
+		errors.append("경로 범퍼가 아닌 배치에는 경로 지점을 연결할 수 없습니다: %s" % assignment.point_id)
+
+	if bumper_type == BumperDefinition.BUMPER_TYPE_SHOT:
+		if assignment.shot_target_point_id == &"":
+			errors.append("발사 범퍼에는 발사 목표 지점이 필요합니다: %s" % assignment.point_id)
+		else:
+			var shot_target := layout_config.get_anchor(assignment.shot_target_point_id)
+			if shot_target == null:
+				errors.append("발사 범퍼가 참조하는 목표 지점을 찾을 수 없습니다: %s" % assignment.shot_target_point_id)
+			elif shot_target.get_type_id() != BoardAnchorConfig.TYPE_SHOT_TARGET:
+				errors.append("발사 범퍼에는 발사 목표 지점만 연결할 수 있습니다: %s" % assignment.shot_target_point_id)
+	elif assignment.shot_target_point_id != &"":
+		errors.append("발사 범퍼가 아닌 배치에는 발사 목표 지점을 연결할 수 없습니다: %s" % assignment.point_id)
+	return errors
+
+
+func _get_track_path_board_positions(
+	assignment: BoardPlacementAssignmentConfig
+) -> PackedVector2Array:
+	var positions := PackedVector2Array()
+	if layout_config == null or assignment == null:
+		return positions
+	for track_point_id in assignment.track_point_ids:
+		var point := layout_config.get_anchor(track_point_id)
+		if point != null and point.get_type_id() == BoardAnchorConfig.TYPE_TRACK_POINT:
+			positions.append(layout_config.get_resolved_anchor_position(point))
+	return positions
+
+
+func _get_shot_target_board_position(
+	assignment: BoardPlacementAssignmentConfig
+) -> Vector2:
+	if layout_config == null or assignment == null or assignment.shot_target_point_id == &"":
+		return Vector2(INF, INF)
+	var point := layout_config.get_anchor(assignment.shot_target_point_id)
+	if point == null or point.get_type_id() != BoardAnchorConfig.TYPE_SHOT_TARGET:
+		return Vector2(INF, INF)
+	return layout_config.get_resolved_anchor_position(point)
 
 
 func _get_flipper_control_target_validation_errors(

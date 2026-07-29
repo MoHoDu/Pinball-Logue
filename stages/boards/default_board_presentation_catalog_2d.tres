@@ -9,6 +9,8 @@
 [ext_resource type="PackedScene" path="res://stages/boards/prefabs_2d/standard_flipper_2d.tscn" id="7_flipper_standard"]
 [ext_resource type="PackedScene" path="res://stages/boards/prefabs_2d/compact_flipper_2d.tscn" id="8_flipper_compact"]
 [ext_resource type="PackedScene" path="res://stages/boards/prefabs_2d/relic_preview_2d.tscn" id="9_relic"]
+[ext_resource type="PackedScene" path="res://stages/boards/prefabs_2d/track_bumper_2d.tscn" id="10_track"]
+[ext_resource type="PackedScene" path="res://stages/boards/prefabs_2d/shot_bumper_2d.tscn" id="11_shot"]
 
 [sub_resource type="Resource" id="Presentation_normal"]
 script = ExtResource("2_presentation")
@@ -19,6 +21,16 @@ scene_2d = ExtResource("3_normal")
 script = ExtResource("2_presentation")
 content_id = &"bumper_bounce"
 scene_2d = ExtResource("4_bounce")
+
+[sub_resource type="Resource" id="Presentation_track"]
+script = ExtResource("2_presentation")
+content_id = &"bumper_track"
+scene_2d = ExtResource("10_track")
+
+[sub_resource type="Resource" id="Presentation_shot"]
+script = ExtResource("2_presentation")
+content_id = &"bumper_shot"
+scene_2d = ExtResource("11_shot")
 
 [sub_resource type="Resource" id="Presentation_wall"]
 script = ExtResource("2_presentation")
@@ -47,4 +59,4 @@ scene_2d = ExtResource("9_relic")
 
 [resource]
 script = ExtResource("1_catalog")
-presentations = Array[ExtResource("2_presentation")]([SubResource("Presentation_normal"), SubResource("Presentation_bounce"), SubResource("Presentation_wall"), SubResource("Presentation_general"), SubResource("Presentation_flipper_standard"), SubResource("Presentation_flipper_compact"), SubResource("Presentation_relic")])
+presentations = Array[ExtResource("2_presentation")]([SubResource("Presentation_normal"), SubResource("Presentation_bounce"), SubResource("Presentation_track"), SubResource("Presentation_shot"), SubResource("Presentation_wall"), SubResource("Presentation_general"), SubResource("Presentation_flipper_standard"), SubResource("Presentation_flipper_compact"), SubResource("Presentation_relic")])

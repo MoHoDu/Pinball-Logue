@@ -154,6 +154,7 @@ func _on_ball_selection_confirm_requested() -> void:
 	_select_current_inventory_ball()
 	_shot_sequence += 1
 	_current_shot_id = StringName("shot_%03d" % _shot_sequence)
+	_board.reset_bumpers_for_new_shot()
 	var prepare_error := _physics_adapter.prepare_ball(
 		_current_shot_id,
 		slot.slot_id,

@@ -5,12 +5,16 @@ signal ball_exit_detected(shot_id: StringName, end_reason: StringName)
 signal flipper_action_started(action_id: StringName, anchor_ids: PackedStringArray)
 signal flipper_action_finished(action_id: StringName, anchor_ids: PackedStringArray)
 signal flipper_parry_applied(action_id: StringName, anchor_id: StringName, shot_id: StringName)
+signal bumper_hit_applied(result: BumperHitResult)
 
 const END_REASON_DRAIN: StringName = &"drain"
 const END_REASON_OUT_OF_BOUNDS: StringName = &"out_of_bounds"
 const BALL_GROUP: StringName = &"pinball_ball_2d"
 const GEOMETRY_EPSILON := 0.001
 const FLIPPER_SCENE := preload("res://pinball/flippers/flipper_2d.tscn")
+const BOARD_PLAYTEST_SELECTION := preload(
+	"res://stages/waves/default_board_playtest_selection.tres"
+)
 
 @export_node_path("BoardMockup2D") var board_mockup_path := NodePath("BoardMockup2D")
 @export var composition_override: WaveBoardCompositionConfig
@@ -24,14 +28,24 @@ var _drain_area: Area2D
 var _flipper_container: Node2D
 var _flipper_adapter := FlipperPhysics2DAdapter.new()
 var _flipper_setup_error := ""
+var _bumper_container: Node2D
+var _bumper_adapter := BumperPhysics2DAdapter.new()
+var _bumper_setup_error := ""
 var _projected_bounds := Rect2()
 var _ended_shot_ids: Dictionary = {}
 
 
 func _ready() -> void:
 	_board_mockup = get_node_or_null(board_mockup_path) as BoardMockup2D
-	if _board_mockup != null and composition_override != null:
-		_board_mockup.apply_composition_config(composition_override)
+	var requested_composition := composition_override
+	if (
+		requested_composition == null
+		and OS.is_debug_build()
+		and BOARD_PLAYTEST_SELECTION.composition_config != null
+	):
+		requested_composition = BOARD_PLAYTEST_SELECTION.composition_config
+	if _board_mockup != null and requested_composition != null:
+		_board_mockup.apply_composition_config(requested_composition)
 	_flipper_adapter.action_started.connect(flipper_action_started.emit)
 	_flipper_adapter.action_finished.connect(flipper_action_finished.emit)
 	_flipper_adapter.parry_applied.connect(flipper_parry_applied.emit)
@@ -40,6 +54,7 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	_flipper_adapter.physics_tick(delta)
+	_bumper_adapter.physics_tick(delta)
 	if _board_mockup == null or _projected_bounds.size == Vector2.ZERO:
 		return
 	var safe_bounds := _projected_bounds.grow(out_of_bounds_margin)
@@ -65,6 +80,8 @@ func get_validation_errors() -> PackedStringArray:
 		errors.append("보드 밖 안전 종료 여백은 양수여야 합니다.")
 	if not _flipper_setup_error.is_empty():
 		errors.append(_flipper_setup_error)
+	if not _bumper_setup_error.is_empty():
+		errors.append(_bumper_setup_error)
 	return errors
 
 
@@ -188,9 +205,14 @@ func clear_finished_shot(shot_id: StringName) -> void:
 	_ended_shot_ids.erase(shot_id)
 
 
+func reset_bumpers_for_new_shot() -> void:
+	_bumper_adapter.reset_for_new_shot()
+
+
 func _rebuild_physics() -> void:
 	_clear_generated_physics()
 	_flipper_setup_error = ""
+	_bumper_setup_error = ""
 	if not get_validation_errors().is_empty():
 		return
 	var boundary := _board_mockup.get_projected_boundary()
@@ -212,6 +234,7 @@ func _rebuild_physics() -> void:
 		else:
 			_add_rail_segment(edge_start, edge_end)
 	_create_drain_sensor(drain_position)
+	_rebuild_bumpers()
 	_rebuild_flippers()
 
 
@@ -222,14 +245,83 @@ func _clear_generated_physics() -> void:
 		_drain_area.queue_free()
 	if is_instance_valid(_flipper_container):
 		_flipper_container.queue_free()
+	if is_instance_valid(_bumper_container):
+		_bumper_container.queue_free()
 	_rail_body = null
 	_drain_area = null
 	_flipper_container = null
+	_bumper_container = null
 	_flipper_adapter.reset()
 	_flipper_adapter = FlipperPhysics2DAdapter.new()
 	_flipper_adapter.action_started.connect(flipper_action_started.emit)
 	_flipper_adapter.action_finished.connect(flipper_action_finished.emit)
 	_flipper_adapter.parry_applied.connect(flipper_parry_applied.emit)
+	_bumper_adapter.reset()
+	_bumper_adapter = BumperPhysics2DAdapter.new()
+	_bumper_adapter.hit_applied.connect(bumper_hit_applied.emit)
+	if _board_mockup != null:
+		_board_mockup.set_bumper_previews_visible(true)
+
+
+func _rebuild_bumpers() -> void:
+	if _board_mockup.composition_config == null:
+		_bumper_setup_error = "웨이브 배치에 범퍼 조립 정보가 없습니다."
+		return
+	var configure_error := _bumper_adapter.configure(
+		self,
+		Callable(self, "_world_to_board_position"),
+		Callable(self, "_board_to_world_position"),
+		Callable(self, "_world_to_board_velocity"),
+		Callable(self, "_board_to_world_velocity"),
+		Callable(self, "_board_radius_to_world")
+	)
+	if not configure_error.is_empty():
+		_bumper_setup_error = configure_error
+		return
+	_bumper_container = Node2D.new()
+	_bumper_container.name = "RuntimeBumpers"
+	add_child(_bumper_container)
+	var definitions_by_id := _board_mockup.get_definitions_by_id()
+	for placement in _board_mockup.composition_config.get_resolved_placements(definitions_by_id):
+		var definition := placement.get("definition") as BumperDefinition
+		if definition == null:
+			continue
+		var point_id := StringName(placement.get("point_id", &""))
+		var board_position: Vector2 = placement.get("board_position", Vector2(INF, INF))
+		var radius_pixels := definition.collision_radius_board_ratio * get_board_width_pixels()
+		var safe_margin_pixels := definition.recovery_safe_margin_board_ratio * get_board_width_pixels()
+		var presentation_scene: PackedScene
+		if _board_mockup.presentation_catalog != null:
+			presentation_scene = _board_mockup.presentation_catalog.get_scene(
+				StringName(placement.get("content_id", &""))
+			)
+		var runtime := BumperRuntime2D.new()
+		var runtime_error := runtime.configure(
+			point_id,
+			definition,
+			radius_pixels,
+			safe_margin_pixels,
+			presentation_scene
+		)
+		if not runtime_error.is_empty():
+			runtime.free()
+			_bumper_setup_error = runtime_error
+			return
+		runtime.position = board_to_local(board_position)
+		runtime.rotation = _board_mockup.get_projected_anchor_direction(point_id).angle()
+		runtime.z_index = 15
+		# AnimatableBody2D의 물리 동기화가 시작되기 전에 배치 변형을 확정한다.
+		# 트리에 먼저 넣고 위치를 바꾸면 첫 물리 동기화에서 원점으로 되돌아갈 수 있다.
+		_bumper_container.add_child(runtime)
+		var register_error := _bumper_adapter.register_bumper(
+			runtime,
+			definition,
+			placement
+		)
+		if not register_error.is_empty():
+			_bumper_setup_error = register_error
+			return
+	_board_mockup.set_bumper_previews_visible(false)
 
 
 func _rebuild_flippers() -> void:
@@ -316,6 +408,10 @@ func _world_to_board_position(world_position: Vector2) -> Vector2:
 	return local_to_board(to_local(world_position))
 
 
+func _board_to_world_position(board_position: Vector2) -> Vector2:
+	return to_global(board_to_local(board_position))
+
+
 func _board_to_world_velocity(board_position: Vector2, board_velocity: Vector2) -> Vector2:
 	var local_velocity := board_velocity_to_local(board_position, board_velocity)
 	return global_transform.basis_xform(local_velocity)
@@ -325,6 +421,13 @@ func _world_to_board_velocity(world_position: Vector2, world_velocity: Vector2) 
 	var local_position := to_local(world_position)
 	var local_velocity := global_transform.affine_inverse().basis_xform(world_velocity)
 	return local_velocity_to_board(local_position, local_velocity)
+
+
+func _board_radius_to_world(_board_position: Vector2, radius_board_ratio: float) -> float:
+	if not is_finite(radius_board_ratio) or radius_board_ratio <= 0.0:
+		return 0.0
+	var local_radius := radius_board_ratio * get_board_width_pixels()
+	return global_transform.basis_xform(Vector2(local_radius, 0.0)).length()
 
 
 func _add_split_drain_edge(edge_start: Vector2, edge_end: Vector2, drain_position: Vector2) -> void:

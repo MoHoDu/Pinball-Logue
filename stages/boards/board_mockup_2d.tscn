@@ -10,14 +10,16 @@
 [ext_resource type="Resource" path="res://pinball/objects/bounce_bumper_definition.tres" id="6_bounce"]
 [ext_resource type="Resource" path="res://pinball/objects/wall_definition.tres" id="7_wall"]
 [ext_resource type="Resource" path="res://pinball/objects/general_object_definition.tres" id="8_general"]
-[ext_resource type="Resource" path="res://pinball/flippers/standard_flipper_definition.tres" id="9_flipper_standard"]
-[ext_resource type="Resource" path="res://pinball/flippers/small_flipper_definition.tres" id="10_flipper_small"]
+[ext_resource type="Resource" uid="uid://dtlqgw0v4kwto" path="res://pinball/flippers/standard_flipper_definition.tres" id="9_flipper_standard"]
+[ext_resource type="Resource" uid="uid://cci5cqlmu22tl" path="res://pinball/flippers/small_flipper_definition.tres" id="10_flipper_small"]
 [ext_resource type="Resource" path="res://relics/catalog/path_guide_relic_preview_definition.tres" id="11_relic"]
+[ext_resource type="Resource" path="res://pinball/objects/track_bumper_definition.tres" id="12_track"]
+[ext_resource type="Resource" path="res://pinball/objects/shot_bumper_definition.tres" id="13_shot"]
 
 [node name="BoardMockup2D" type="Node2D" unique_id=1282917401]
 script = ExtResource("1_mockup")
 layout_config = ExtResource("2_eys82")
 view_config = ExtResource("2_view")
 composition_config = ExtResource("3_composition")
-object_definitions = Array[ExtResource("5_hjgr5")]([ExtResource("5_normal"), ExtResource("6_bounce"), ExtResource("7_wall"), ExtResource("8_general"), ExtResource("9_flipper_standard"), ExtResource("10_flipper_small"), ExtResource("11_relic")])
+object_definitions = Array[ExtResource("5_hjgr5")]([ExtResource("5_normal"), ExtResource("6_bounce"), ExtResource("12_track"), ExtResource("13_shot"), ExtResource("7_wall"), ExtResource("8_general"), ExtResource("9_flipper_standard"), ExtResource("10_flipper_small"), ExtResource("11_relic")])
 presentation_catalog = ExtResource("4_catalog")

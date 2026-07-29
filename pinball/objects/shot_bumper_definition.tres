@@ -4,12 +4,12 @@
 
 [resource]
 script = ExtResource("1_bumper")
-content_id = &"bumper_normal"
-display_name = "일반 범퍼"
+content_id = &"bumper_shot"
+display_name = "발사 범퍼"
 object_type = "bumper"
 indestructible = false
-max_durability = 3
-bumper_type = "normal"
+max_durability = 4
+bumper_type = "shot"
 collision_radius_board_ratio = 0.04
 durability_damage_per_hit = 1
 base_score_value = 100

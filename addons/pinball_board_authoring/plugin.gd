@@ -14,6 +14,8 @@ enum MenuAction {
 	ADD_GENERAL_OBJECT,
 	ADD_RELIC_SLOT,
 	ADD_FLIPPER,
+	ADD_TRACK_POINT,
+	ADD_SHOT_TARGET,
 	DELETE_POINT,
 	CHECK_ERRORS,
 }
@@ -23,6 +25,8 @@ const HANDLE_HIT_RADIUS := 14.0
 const MAX_FLIPPER_COUNT := 4
 const FALLBACK_ANCHOR_SCRIPT_PATH := "res://stages/boards/board_anchor_config.gd"
 const ASSIGNMENT_SCRIPT_PATH := "res://stages/waves/board_placement_assignment_config.gd"
+const PLAYTEST_SELECTION_PATH := "res://stages/waves/default_board_playtest_selection.tres"
+const DEFAULT_VIEW_CONFIG_PATH := "res://stages/boards/default_board_view_config.tres"
 const BoardContentPathPolicy := preload(
 	"res://addons/pinball_board_authoring/board_content_path_policy.gd"
 )
@@ -92,6 +96,7 @@ func _edit(object: Object) -> void:
 	_cancel_drag()
 	_edited_node = object as Node2D if _handles(object) else null
 	_selected_anchor_index = -1
+	_edit_mode = EditMode.POINT if _edited_node != null else EditMode.NONE
 	_refresh_definition_options()
 	_update_status()
 	update_overlays()
@@ -136,6 +141,8 @@ func _forward_canvas_draw_over_viewport(overlay: Control) -> void:
 				overlay.draw_circle(handle_position, HANDLE_RADIUS, Color("f4d35e"))
 				overlay.draw_circle(handle_position, HANDLE_RADIUS, Color("6b4f00"), false, 2.0, true)
 
+	_draw_bumper_behavior_guides(overlay, transform)
+
 	var anchors := _get_anchors()
 	for anchor_index in anchors.size():
 		var anchor: Object = anchors[anchor_index]
@@ -161,6 +168,53 @@ func _forward_canvas_draw_over_viewport(overlay: Control) -> void:
 				ThemeDB.fallback_font_size,
 				Color("f3f7f8")
 			)
+
+
+func _draw_bumper_behavior_guides(overlay: Control, transform: Transform2D) -> void:
+	var layout := _get_layout()
+	if layout == null or not layout.has_method("get_anchor"):
+		return
+	for assignment in _get_assignments():
+		if assignment == null or not _has_property(assignment, &"point_id"):
+			continue
+		var source := layout.call("get_anchor", StringName(assignment.get("point_id")))
+		if source == null:
+			continue
+		var previous_screen := transform * _project_board_position(
+			_get_resolved_anchor_position(source)
+		)
+		if _has_property(assignment, &"track_point_ids"):
+			var route_index := 1
+			for point_id in assignment.get("track_point_ids"):
+				var route_point := layout.call("get_anchor", StringName(point_id))
+				if route_point == null:
+					continue
+				var route_screen := transform * _project_board_position(
+					_get_resolved_anchor_position(route_point)
+				)
+				overlay.draw_dashed_line(previous_screen, route_screen, Color("5ac8fa"), 2.0, 8.0, true)
+				overlay.draw_string(
+					ThemeDB.fallback_font,
+					route_screen + Vector2(10.0, 16.0),
+					"경로 %d" % route_index,
+					HORIZONTAL_ALIGNMENT_LEFT,
+					-1.0,
+					ThemeDB.fallback_font_size,
+					Color("bdefff")
+				)
+				previous_screen = route_screen
+				route_index += 1
+		if _has_property(assignment, &"shot_target_point_id"):
+			var target_id := StringName(assignment.get("shot_target_point_id"))
+			if target_id == &"":
+				continue
+			var target := layout.call("get_anchor", target_id)
+			if target == null:
+				continue
+			var target_screen := transform * _project_board_position(
+				_get_resolved_anchor_position(target)
+			)
+			overlay.draw_line(previous_screen, target_screen, Color("ff9f43"), 2.5, true)
 
 
 func _forward_canvas_gui_input(event: InputEvent) -> bool:
@@ -207,11 +261,20 @@ func _build_dock() -> void:
 	help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_dock.add_child(help)
 	_add_dock_button("복제해서 새 보드 만들기", _on_duplicate_requested)
+	_add_dock_button("웨이브에서 이 보드 시험", _on_use_current_board_in_wave_requested)
 	_add_dock_button("외곽선 편집", _on_boundary_mode_requested)
+	_add_dock_button("배치 지점 선택·이동", _on_point_mode_requested)
 	_add_dock_button("범퍼 지점 추가", _on_add_bumper_requested)
 	_add_dock_button("일반 오브젝트 지점 추가", _on_add_general_object_requested)
 	_add_dock_button("유물 배치 지점 추가", _on_add_relic_slot_requested)
 	_add_dock_button("플리퍼 추가", _on_add_flipper_requested)
+	_add_dock_button("경로 지점 추가", _on_add_track_point_requested)
+	_add_dock_button("발사 목표 지점 추가", _on_add_shot_target_requested)
+	_add_dock_button("선택 플리퍼 안쪽 방향 맞춤", _on_align_flipper_inward_requested)
+	_add_dock_button("선택 플리퍼 왼쪽으로 15°", _on_rotate_flipper_left_requested)
+	_add_dock_button("선택 플리퍼 오른쪽으로 15°", _on_rotate_flipper_right_requested)
+	_add_dock_button("보드 표시 15% 크게", _on_grow_board_requested)
+	_add_dock_button("보드 표시 15% 작게", _on_shrink_board_requested)
 	_add_dock_button("선택 지점 삭제", _on_delete_point_requested)
 	var placement_separator := HSeparator.new()
 	_dock.add_child(placement_separator)
@@ -276,6 +339,8 @@ func _build_toolbar() -> void:
 	popup.add_item("일반 오브젝트 지점 추가", MenuAction.ADD_GENERAL_OBJECT)
 	popup.add_item("유물 배치 지점 추가", MenuAction.ADD_RELIC_SLOT)
 	popup.add_item("플리퍼 추가", MenuAction.ADD_FLIPPER)
+	popup.add_item("경로 지점 추가", MenuAction.ADD_TRACK_POINT)
+	popup.add_item("발사 목표 지점 추가", MenuAction.ADD_SHOT_TARGET)
 	popup.add_item("선택 지점 삭제", MenuAction.DELETE_POINT)
 	popup.add_separator()
 	popup.add_item("오류 확인", MenuAction.CHECK_ERRORS)
@@ -299,6 +364,8 @@ func _on_toolbar_action(action_id: int) -> void:
 		MenuAction.ADD_GENERAL_OBJECT: _on_add_general_object_requested()
 		MenuAction.ADD_RELIC_SLOT: _on_add_relic_slot_requested()
 		MenuAction.ADD_FLIPPER: _on_add_flipper_requested()
+		MenuAction.ADD_TRACK_POINT: _on_add_track_point_requested()
+		MenuAction.ADD_SHOT_TARGET: _on_add_shot_target_requested()
 		MenuAction.DELETE_POINT: _on_delete_point_requested()
 		MenuAction.CHECK_ERRORS: _on_check_errors_requested()
 
@@ -325,8 +392,8 @@ func _on_board_id_changed(board_id: String) -> void:
 		return
 	var paths := BoardContentPathPolicy.get_board_paths(board_id)
 	_duplicate_path_label.text = (
-		"저장 위치\n%s\n%s"
-		% [paths.get("layout", ""), paths.get("composition", "")]
+		"저장 위치\n%s\n%s\n%s"
+		% [paths.get("layout", ""), paths.get("view", ""), paths.get("composition", "")]
 	)
 
 
@@ -343,6 +410,10 @@ func _duplicate_board_resources(board_id: String) -> bool:
 	if original_composition == null:
 		_show_message("보드 설계도와 함께 복제할 웨이브 배치표를 찾지 못했습니다.")
 		return false
+	var original_view := _get_view_config()
+	if original_view == null:
+		_show_message("보드 설계도와 함께 복제할 보기 설정을 찾지 못했습니다.")
+		return false
 	var id_error := BoardContentPathPolicy.get_board_id_error(board_id)
 	if not id_error.is_empty():
 		_show_message(id_error)
@@ -354,6 +425,7 @@ func _duplicate_board_resources(board_id: String) -> bool:
 		return false
 	var directory_path := String(paths["directory"])
 	var layout_path := String(paths["layout"])
+	var view_path := String(paths["view"])
 	var composition_path := String(paths["composition"])
 	var directory_error := DirAccess.make_dir_recursive_absolute(
 		ProjectSettings.globalize_path(directory_path)
@@ -376,8 +448,25 @@ func _duplicate_board_resources(board_id: String) -> bool:
 		_remove_new_board_directory(directory_path, [layout_path])
 		_show_message("저장한 보드 설계도를 다시 불러오지 못해 새 보드 생성을 취소했습니다.")
 		return false
+	var duplicate_view: Resource = original_view.duplicate(true)
+	var view_save_error := ResourceSaver.save(duplicate_view, view_path)
+	if view_save_error != OK:
+		_remove_new_board_directory(directory_path, [layout_path, view_path])
+		_show_message("보드 보기 설정 복제에 실패했습니다.\n오류 코드: %d" % view_save_error)
+		return false
+	var saved_view := ResourceLoader.load(
+		view_path,
+		"Resource",
+		ResourceLoader.CACHE_MODE_IGNORE
+	) as Resource
+	if saved_view == null:
+		_remove_new_board_directory(directory_path, [layout_path, view_path])
+		_show_message("저장한 보드 보기 설정을 다시 불러오지 못해 새 보드 생성을 취소했습니다.")
+		return false
 	var duplicate_composition: Resource = original_composition.duplicate(true)
 	duplicate_composition.set("layout_config", saved_layout)
+	if _has_property(duplicate_composition, &"view_config"):
+		duplicate_composition.set("view_config", saved_view)
 	var composition_save_error := ResourceSaver.save(
 		duplicate_composition,
 		composition_path
@@ -385,7 +474,7 @@ func _duplicate_board_resources(board_id: String) -> bool:
 	if composition_save_error != OK:
 		var cleanup_errors := _remove_new_board_directory(
 			directory_path,
-			[layout_path, composition_path]
+			[layout_path, view_path, composition_path]
 		)
 		var cleanup_message := ""
 		if not cleanup_errors.is_empty():
@@ -405,14 +494,21 @@ func _duplicate_board_resources(board_id: String) -> bool:
 		if saved_composition != null
 		else null
 	)
+	var linked_view := (
+		saved_composition.get("view_config") as Resource
+		if saved_composition != null and _has_property(saved_composition, &"view_config")
+		else null
+	)
 	if (
 		saved_composition == null
 		or linked_layout == null
 		or linked_layout.resource_path != layout_path
+		or linked_view == null
+		or linked_view.resource_path != view_path
 	):
 		var cleanup_errors := _remove_new_board_directory(
 			directory_path,
-			[layout_path, composition_path]
+			[layout_path, view_path, composition_path]
 		)
 		var cleanup_message := ""
 		if not cleanup_errors.is_empty():
@@ -425,6 +521,8 @@ func _duplicate_board_resources(board_id: String) -> bool:
 	_undo_redo.create_action("보드 설계도와 웨이브 배치 함께 복제")
 	_undo_redo.add_do_property(_edited_node, &"layout_config", saved_layout)
 	_undo_redo.add_undo_property(_edited_node, &"layout_config", layout)
+	_undo_redo.add_do_property(_edited_node, &"view_config", saved_view)
+	_undo_redo.add_undo_property(_edited_node, &"view_config", original_view)
 	_undo_redo.add_do_property(
 		_edited_node,
 		&"composition_config",
@@ -438,8 +536,8 @@ func _duplicate_board_resources(board_id: String) -> bool:
 	_undo_redo.commit_action()
 	get_editor_interface().get_resource_filesystem().scan()
 	_show_message(
-		"새 보드 설계도와 웨이브 배치를 함께 만들고 현재 씬에 연결했습니다.\n%s\n%s\n\n실행 취소는 현재 씬의 연결만 되돌리며, 만든 파일은 삭제하지 않습니다."
-		% [layout_path, composition_path]
+		"새 보드 설계도·보기 설정·웨이브 배치를 함께 만들고 현재 씬에 연결했습니다.\n%s\n%s\n%s\n\n실행 취소는 현재 씬의 연결만 되돌리며, 만든 파일은 삭제하지 않습니다."
+		% [layout_path, view_path, composition_path]
 	)
 	_update_status()
 	update_overlays()
@@ -474,6 +572,41 @@ func _on_boundary_mode_requested() -> void:
 	update_overlays()
 
 
+func _on_point_mode_requested() -> void:
+	if not _require_layout():
+		return
+	_edit_mode = EditMode.POINT
+	_update_status()
+	update_overlays()
+
+
+func _on_use_current_board_in_wave_requested() -> void:
+	var composition := _get_composition_config()
+	if composition == null:
+		_show_message("웨이브에서 시험할 현재 보드 배치표가 없습니다.")
+		return
+	if composition.resource_path.is_empty():
+		_show_message("현재 웨이브 배치표를 먼저 저장한 뒤 다시 시도하세요.")
+		return
+	var selection := ResourceLoader.load(
+		PLAYTEST_SELECTION_PATH,
+		"Resource",
+		ResourceLoader.CACHE_MODE_IGNORE
+	) as Resource
+	if selection == null or not _has_property(selection, &"composition_config"):
+		_show_message("웨이브 시험 보드 선택 설정을 불러오지 못했습니다.")
+		return
+	selection.set("composition_config", composition)
+	if ResourceSaver.save(selection, PLAYTEST_SELECTION_PATH) != OK:
+		_show_message("현재 보드를 웨이브 시험 대상으로 저장하지 못했습니다.")
+		return
+	_show_message(
+		"현재 보드를 웨이브 시험 대상으로 연결했습니다.\n"
+		+ "wave_screen.tscn을 다시 실행하면 바로 적용됩니다.\n\n%s"
+		% composition.resource_path
+	)
+
+
 func _on_add_bumper_requested() -> void:
 	_add_anchor("bumper", "bumper")
 
@@ -493,6 +626,34 @@ func _on_add_flipper_requested() -> void:
 	_add_anchor("flipper", "flipper")
 
 
+func _on_align_flipper_inward_requested() -> void:
+	_set_selected_flipper_rotation(0.0, "선택 플리퍼 안쪽 방향 맞춤")
+
+
+func _on_rotate_flipper_left_requested() -> void:
+	_rotate_selected_flipper(-15.0)
+
+
+func _on_rotate_flipper_right_requested() -> void:
+	_rotate_selected_flipper(15.0)
+
+
+func _on_grow_board_requested() -> void:
+	_resize_board_display(1.15)
+
+
+func _on_shrink_board_requested() -> void:
+	_resize_board_display(1.0 / 1.15)
+
+
+func _on_add_track_point_requested() -> void:
+	_add_anchor("track_point", "track_point")
+
+
+func _on_add_shot_target_requested() -> void:
+	_add_anchor("shot_target", "shot_target")
+
+
 func _on_delete_point_requested() -> void:
 	if not _require_layout():
 		return
@@ -507,6 +668,9 @@ func _on_delete_point_requested() -> void:
 		return
 	if _has_property(selected_anchor, &"anchor_id") and _find_assignment_index(StringName(selected_anchor.get("anchor_id"))) >= 0:
 		_show_message("선택한 지점에 오브젝트 원형이 배치되어 있습니다.\n먼저 '배치 비우기'를 누른 뒤 지점을 삭제하세요.")
+		return
+	if _has_property(selected_anchor, &"anchor_id") and _is_bumper_behavior_point_referenced(StringName(selected_anchor.get("anchor_id"))):
+		_show_message("선택한 지점이 범퍼의 경로나 발사 목표로 사용 중입니다.\n웨이브 배치에서 연결을 먼저 해제한 뒤 삭제하세요.")
 		return
 	var updated_anchors := anchors.duplicate()
 	updated_anchors.remove_at(_selected_anchor_index)
@@ -537,6 +701,10 @@ func _on_apply_definition_requested() -> void:
 	if content_id == &"":
 		_show_message("오브젝트 원형을 먼저 선택하세요.")
 		return
+	var definition := _find_definition(content_id)
+	if definition == null:
+		_show_message("선택한 오브젝트 원형 정보를 찾지 못했습니다.")
+		return
 	var point := _get_selected_anchor()
 	var point_id := StringName(point.get("anchor_id"))
 	var composition := _get_composition_config()
@@ -548,18 +716,167 @@ func _on_apply_definition_requested() -> void:
 	assignment.set("point_id", point_id)
 	assignment.set("content_id", content_id)
 	var updated_assignments := assignments.duplicate()
+	var anchors := _get_anchors()
+	var updated_anchors := anchors.duplicate()
+	var flipper_targets: Array = composition.get("flipper_control_targets") if _has_property(composition, &"flipper_control_targets") else []
+	var updated_flipper_targets := flipper_targets.duplicate()
 	var replacement_index := _find_assignment_index(point_id)
 	if replacement_index >= 0:
+		var previous_assignment: Object = assignments[replacement_index]
+		if previous_assignment != null:
+			if _has_property(previous_assignment, &"track_point_ids") and _has_property(assignment, &"track_point_ids"):
+				assignment.set("track_point_ids", previous_assignment.get("track_point_ids"))
+			if _has_property(previous_assignment, &"shot_target_point_id") and _has_property(assignment, &"shot_target_point_id"):
+				assignment.set("shot_target_point_id", previous_assignment.get("shot_target_point_id"))
 		updated_assignments[replacement_index] = assignment
 	else:
 		updated_assignments.append(assignment)
+	_append_default_bumper_helper(definition, assignment, point, updated_anchors)
+	_append_default_flipper_control_target(point, updated_flipper_targets)
 	_undo_redo.create_action("선택 지점에 오브젝트 원형 적용")
+	if updated_anchors.size() != anchors.size():
+		var layout := _get_layout()
+		_undo_redo.add_do_property(layout, &"anchors", updated_anchors)
+		_undo_redo.add_undo_property(layout, &"anchors", anchors)
+		_undo_redo.add_do_method(layout, &"emit_changed")
+		_undo_redo.add_undo_method(layout, &"emit_changed")
+	if updated_flipper_targets.size() != flipper_targets.size():
+		_undo_redo.add_do_property(composition, &"flipper_control_targets", updated_flipper_targets)
+		_undo_redo.add_undo_property(composition, &"flipper_control_targets", flipper_targets)
 	_undo_redo.add_do_property(composition, &"assignments", updated_assignments)
 	_undo_redo.add_undo_property(composition, &"assignments", assignments)
 	_undo_redo.add_do_method(composition, &"emit_changed")
 	_undo_redo.add_undo_method(composition, &"emit_changed")
 	_undo_redo.commit_action()
 	_refresh_definition_options()
+	_update_status()
+	update_overlays()
+
+
+func _append_default_bumper_helper(
+	definition: Object,
+	assignment: Object,
+	source_point: Object,
+	updated_anchors: Array
+) -> void:
+	if definition == null or not _has_property(definition, &"bumper_type"):
+		return
+	var bumper_type := String(definition.get("bumper_type"))
+	var helper_type := ""
+	var helper_prefix := ""
+	if bumper_type == "track" and _has_property(assignment, &"track_point_ids"):
+		if not assignment.get("track_point_ids").is_empty():
+			return
+		helper_type = "track_point"
+		helper_prefix = "track_point"
+	elif bumper_type == "shot" and _has_property(assignment, &"shot_target_point_id"):
+		if StringName(assignment.get("shot_target_point_id")) != &"":
+			return
+		helper_type = "shot_target"
+		helper_prefix = "shot_target"
+	else:
+		return
+	var helper := _create_anchor_resource(updated_anchors)
+	if helper == null:
+		return
+	var helper_id := StringName(_make_unique_anchor_id(helper_prefix))
+	helper.set("anchor_id", helper_id)
+	helper.set("anchor_type", helper_type)
+	helper.set("board_position", _get_default_helper_position(source_point))
+	updated_anchors.append(helper)
+	if bumper_type == "track":
+		assignment.set("track_point_ids", PackedStringArray([String(helper_id)]))
+	else:
+		assignment.set("shot_target_point_id", helper_id)
+
+
+func _append_default_flipper_control_target(point: Object, updated_targets: Array) -> void:
+	if point == null or _get_anchor_type(point) != "flipper":
+		return
+	var point_id := StringName(point.get("anchor_id"))
+	for target in updated_targets:
+		if target != null and target.has_method("get_point_ids"):
+			if target.call("get_point_ids").has(point_id):
+				return
+	var target := FlipperControlTargetConfig.new()
+	var position := _get_resolved_anchor_position(point)
+	var board_center := Vector2.ZERO
+	var layout := _get_layout()
+	if layout != null and layout.has_method("get_board_center"):
+		board_center = layout.call("get_board_center")
+	if position.x < board_center.x:
+		target.set_mode_id(FlipperControlTargetConfig.MODE_LEFT_ONLY)
+		target.left_point_id = point_id
+	else:
+		target.set_mode_id(FlipperControlTargetConfig.MODE_RIGHT_ONLY)
+		target.right_point_id = point_id
+	updated_targets.append(target)
+
+
+func _get_default_helper_position(source_point: Object) -> Vector2:
+	var source_position := _get_resolved_anchor_position(source_point)
+	var layout := _get_layout()
+	var board_center := Vector2.ZERO
+	if layout != null and layout.has_method("get_board_center"):
+		board_center = layout.call("get_board_center")
+	var candidate := source_position.lerp(board_center, 0.45)
+	if candidate.distance_to(source_position) < 0.05:
+		candidate += Vector2(0.0, -0.12)
+	if (
+		layout != null
+		and layout.has_method("is_board_position_in_bounds")
+		and not layout.call("is_board_position_in_bounds", candidate)
+	):
+		candidate = board_center
+	return _clamp_board_position(candidate)
+
+
+func _set_selected_flipper_rotation(rotation_degrees: float, action_name: String) -> void:
+	var anchor := _get_selected_anchor()
+	if anchor == null or _get_anchor_type(anchor) != "flipper":
+		_show_message("방향을 바꿀 플리퍼 지점을 먼저 2D 화면에서 선택하세요.")
+		return
+	var previous_rotation := float(anchor.get("rotation_degrees"))
+	_undo_redo.create_action(action_name)
+	_undo_redo.add_do_property(anchor, &"rotation_degrees", wrapf(rotation_degrees, -180.0, 180.0))
+	_undo_redo.add_undo_property(anchor, &"rotation_degrees", previous_rotation)
+	_undo_redo.add_do_method(anchor, &"emit_changed")
+	_undo_redo.add_undo_method(anchor, &"emit_changed")
+	_undo_redo.commit_action()
+	_update_status()
+	update_overlays()
+
+
+func _rotate_selected_flipper(delta_degrees: float) -> void:
+	var anchor := _get_selected_anchor()
+	if anchor == null or _get_anchor_type(anchor) != "flipper":
+		_show_message("회전할 플리퍼 지점을 먼저 2D 화면에서 선택하세요.")
+		return
+	_set_selected_flipper_rotation(
+		float(anchor.get("rotation_degrees")) + delta_degrees,
+		"선택 플리퍼 방향 회전"
+	)
+
+
+func _resize_board_display(scale_multiplier: float) -> void:
+	var view := _get_view_config()
+	if view == null or not _has_property(view, &"board_size"):
+		_show_message("보드 표시 크기 설정을 찾지 못했습니다.")
+		return
+	if view.resource_path == DEFAULT_VIEW_CONFIG_PATH:
+		_show_message("기본 보기 설정은 직접 바꾸지 않습니다.\n먼저 '복제해서 새 보드 만들기'를 눌러 보드 전용 보기 설정을 만든 뒤 크기를 조절하세요.")
+		return
+	var previous_size: Vector2 = view.get("board_size")
+	var next_size := Vector2(
+		clampf(previous_size.x * scale_multiplier, 300.0, 960.0),
+		clampf(previous_size.y * scale_multiplier, 280.0, 700.0)
+	)
+	_undo_redo.create_action("보드 표시 크기 변경")
+	_undo_redo.add_do_property(view, &"board_size", next_size)
+	_undo_redo.add_undo_property(view, &"board_size", previous_size)
+	_undo_redo.add_do_method(view, &"emit_changed")
+	_undo_redo.add_undo_method(view, &"emit_changed")
+	_undo_redo.commit_action()
 	_update_status()
 	update_overlays()
 
@@ -659,7 +976,16 @@ func _is_supported_anchor_type(anchor: Object, anchor_type: String) -> bool:
 		for type_id in supported:
 			if String(type_id) == anchor_type:
 				return true
-	return anchor_type in ["launch", "drain", "bumper", "flipper", "relic_slot", "object"]
+	return anchor_type in [
+		"launch",
+		"drain",
+		"bumper",
+		"flipper",
+		"relic_slot",
+		"object",
+		"track_point",
+		"shot_target",
+	]
 
 
 func _begin_boundary_drag(point_index: int) -> void:
@@ -1163,6 +1489,8 @@ func _get_anchor_color(anchor_type: String) -> Color:
 		"launch": return Color("dbe9f4")
 		"drain": return Color("ef476f")
 		"object": return Color("9b8afb")
+		"track_point": return Color("5ac8fa")
+		"shot_target": return Color("ff9f43")
 		_: return Color("a8b2b8")
 
 
@@ -1174,7 +1502,22 @@ func _get_friendly_anchor_type(anchor_type: String) -> String:
 		"launch": return "발사"
 		"drain": return "드레인"
 		"object": return "일반 오브젝트"
+		"track_point": return "경로"
+		"shot_target": return "발사 목표"
 		_: return "배치"
+
+
+func _is_bumper_behavior_point_referenced(anchor_id: StringName) -> bool:
+	for assignment in _get_assignments():
+		if assignment == null:
+			continue
+		if _has_property(assignment, &"track_point_ids"):
+			for track_point_id in assignment.get("track_point_ids"):
+				if StringName(track_point_id) == anchor_id:
+					return true
+		if _has_property(assignment, &"shot_target_point_id") and StringName(assignment.get("shot_target_point_id")) == anchor_id:
+			return true
+	return false
 
 
 func _make_unique_anchor_id(prefix: String) -> String:
@@ -1249,7 +1592,15 @@ func _update_status() -> void:
 		selection_text = "선택: %s" % _get_anchor_label(anchors[_selected_anchor_index], _selected_anchor_index)
 	var errors := _collect_errors()
 	var error_text := "오류 없음" if errors.is_empty() else "오류 %d개 — '오류 확인'을 누르세요." % errors.size()
-	_status_label.text = "현재 모드: %s\n%s\n%s" % [mode_text, selection_text, error_text]
+	var layout_name := _get_layout().resource_path.get_file() if _get_layout() != null else "없음"
+	var composition_name := _get_composition_config().resource_path.get_file() if _get_composition_config() != null else "없음"
+	_status_label.text = "현재 모드: %s\n%s\n보드: %s\n웨이브 배치: %s\n%s" % [
+		mode_text,
+		selection_text,
+		layout_name,
+		composition_name,
+		error_text,
+	]
 
 
 func _show_message(message: String) -> void:

@@ -129,6 +129,10 @@ func get_composition_config() -> WaveBoardCompositionConfig:
 
 func apply_composition_config(config: WaveBoardCompositionConfig) -> void:
 	composition_config = config
+	if config != null and config.layout_config != null:
+		layout_config = config.layout_config
+	if config != null and config.view_config != null:
+		view_config = config.view_config
 	_rebuild_object_previews()
 	queue_redraw()
 
@@ -149,6 +153,17 @@ func set_flipper_previews_visible(is_visible: bool) -> void:
 		var point_id := StringName(preview.get_meta("board_point_id", ""))
 		var point := layout_config.get_anchor(point_id)
 		if point != null and point.get_type_id() == BoardAnchorConfig.TYPE_FLIPPER:
+			preview.visible = is_visible
+
+
+func set_bumper_previews_visible(is_visible: bool) -> void:
+	_ensure_preview_container()
+	if layout_config == null:
+		return
+	for preview in _preview_container.get_children():
+		var point_id := StringName(preview.get_meta("board_point_id", ""))
+		var point := layout_config.get_anchor(point_id)
+		if point != null and point.get_type_id() == BoardAnchorConfig.TYPE_BUMPER:
 			preview.visible = is_visible
 
 

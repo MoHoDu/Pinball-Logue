@@ -8,9 +8,11 @@ const TYPE_BUMPER := &"bumper"
 const TYPE_FLIPPER := &"flipper"
 const TYPE_RELIC_SLOT := &"relic_slot"
 const TYPE_OBJECT := &"object"
+const TYPE_TRACK_POINT := &"track_point"
+const TYPE_SHOT_TARGET := &"shot_target"
 
 @export var anchor_id: StringName = &""
-@export_enum("launch", "drain", "bumper", "flipper", "relic_slot", "object") var anchor_type := "bumper"
+@export_enum("launch", "drain", "bumper", "flipper", "relic_slot", "object", "track_point", "shot_target") var anchor_type := "bumper"
 @export var board_position := Vector2.ZERO
 @export_range(-180.0, 180.0, 0.5) var rotation_degrees := 0.0
 @export_group("플리퍼 외곽선 배치")
@@ -27,6 +29,8 @@ static func get_supported_types() -> Array[StringName]:
 		TYPE_FLIPPER,
 		TYPE_RELIC_SLOT,
 		TYPE_OBJECT,
+		TYPE_TRACK_POINT,
+		TYPE_SHOT_TARGET,
 	]
 
 

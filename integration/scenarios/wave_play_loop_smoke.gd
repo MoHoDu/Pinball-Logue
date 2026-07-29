@@ -3,6 +3,7 @@ extends SceneTree
 const WAVE_SCENE := preload("res://app/navigation/screens/wave_screen.tscn")
 
 var _failures := PackedStringArray()
+var _bumper_hit_results: Array[BumperHitResult] = []
 
 
 func _init() -> void:
@@ -17,6 +18,7 @@ func _run() -> void:
 	await process_frame
 	var router := screen.get_node("WaveInputRouter") as WaveInputRouter
 	var board := screen.get_node("PlayableBoard2D") as PlayableBoard2D
+	board.bumper_hit_applied.connect(_bumper_hit_results.append)
 	_expect(
 		screen.get_remaining_ball_count() == 3,
 		"기본 웨이브에 공 세 개가 준비되지 않았습니다: %s / %s" % [
@@ -115,6 +117,18 @@ func _run() -> void:
 				screen.get_shot_phase() == ShotPhases.AIMING,
 				"Space 반복 입력이 방향키 조준 중 공을 발사했습니다."
 			)
+		if expected_remaining == 2:
+			var launch_position := board.get_launch_board_position()
+			var bumper_anchor := board.get_layout_config().get_anchor(&"bumper_top")
+			_expect(bumper_anchor != null, "첫 10초 충돌 시험의 상단 범퍼 지점이 없습니다.")
+			if bumper_anchor != null:
+				var bumper_position := board.get_layout_config().get_resolved_anchor_position(bumper_anchor)
+				var target_direction := launch_position.direction_to(bumper_position)
+				screen._aim_angle_degrees = rad_to_deg(
+					board.get_launch_forward_direction().angle_to(target_direction)
+				)
+				screen._aim_strength = 1.0
+				screen._refresh_hud()
 		router._unhandled_input(_key_event(KEY_SPACE))
 		_expect(screen.get_shot_phase() == ShotPhases.IN_PLAY, "두 번째 Space로 공을 발사하지 못했습니다.")
 		_expect(
@@ -151,6 +165,25 @@ func _run() -> void:
 						not left_flipper.is_action_active() and not right_flipper.is_action_active(),
 						"좌우 플리퍼가 설정 시간 뒤 자동 복귀하지 않았습니다."
 					)
+			var collision_frames := 0
+			while (
+				_bumper_hit_results.is_empty()
+				and screen.has_active_ball()
+				and collision_frames < 600
+			):
+				await physics_frame
+				collision_frames += 1
+			_expect(not _bumper_hit_results.is_empty(), "실제 웨이브의 조준 발사가 첫 10초 안에 범퍼를 타격하지 못했습니다.")
+			if not _bumper_hit_results.is_empty():
+				_expect(
+					_bumper_hit_results[0].collision_strength_board_per_second
+					>= screen.launch_config.minimum_speed_board_per_second,
+					"첫 10초 범퍼 타격의 충돌 세기가 최소 발사 속도보다 낮습니다."
+				)
+				print(
+					"WAVE_BUMPER_FIRST_HIT: frame=%d strength=%.3f"
+					% [collision_frames, _bumper_hit_results[0].collision_strength_board_per_second]
+				)
 		var shot_id := screen.get_active_shot_id()
 		board.ball_exit_detected.emit(shot_id, ShotEndReasons.DRAIN)
 		board.ball_exit_detected.emit(shot_id, ShotEndReasons.DRAIN)

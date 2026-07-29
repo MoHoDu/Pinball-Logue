@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="BoardPlaytestSelectionConfig" format=3]
+
+[ext_resource type="Script" path="res://stages/waves/board_playtest_selection_config.gd" id="1_selection"]
+[ext_resource type="Resource" path="res://stages/waves/default_wave_board_composition.tres" id="2_composition"]
+
+[resource]
+script = ExtResource("1_selection")
+composition_config = ExtResource("2_composition")

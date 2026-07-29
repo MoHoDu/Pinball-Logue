@@ -18,7 +18,7 @@ static var PRESENTATIONS: Dictionary = {
 	},
 	"BoardLayoutConfig": {
 		"boundary_points": _entry("보드 외곽선", "보드 모양을 이루는 정규화 좌표의 꼭짓점 목록입니다."),
-		"anchors": _entry("배치 지점", "발사·드레인·범퍼·플리퍼·유물·일반 오브젝트를 놓을 자리입니다."),
+		"anchors": _entry("배치 지점", "발사·드레인·범퍼·플리퍼·유물·일반 오브젝트와 범퍼 경로·목표를 표시하는 자리입니다."),
 		"launch_anchor_id": _entry("발사 지점", "공을 생성하고 발사를 시작할 배치 지점 이름입니다."),
 		"drain_anchor_id": _entry("드레인 지점", "공이 낙하한 것으로 판정할 배치 지점 이름입니다."),
 	},
@@ -63,6 +63,8 @@ static var PRESENTATIONS: Dictionary = {
 	"BoardPlacementAssignmentConfig": {
 		"point_id": _entry("배치 지점", "오브젝트를 놓을 보드 배치 지점의 이름입니다."),
 		"content_id": _entry("오브젝트 원형", "선택한 지점에 배치할 범퍼·벽·플리퍼·유물 등의 원형 이름입니다."),
+		"track_point_ids": _entry("경로 지점 순서", "경로 범퍼가 공을 안내할 경로 지점 이름을 이동 순서대로 지정합니다."),
+		"shot_target_point_id": _entry("발사 목표 지점", "발사 범퍼가 공을 내보낼 목표 지점 이름입니다."),
 	},
 	"FlipperControlTargetConfig": {
 		"mode": _entry("작동 방식", "왼쪽만·오른쪽만·좌우 쌍 중 이 방향키로 함께 작동할 방식을 고릅니다."),
@@ -78,6 +80,17 @@ static var PRESENTATIONS: Dictionary = {
 	},
 	"BumperDefinition": {
 		"bumper_type": _entry("범퍼 종류", "일반·반동·트랙·샷 중 범퍼의 규칙 종류입니다."),
+		"collision_radius_board_ratio": _entry("충돌 반지름", "공이 이 범퍼와 접촉하는 보드 너비 기준 반지름입니다.", "보드 비율"),
+		"durability_damage_per_hit": _entry("타격당 내구도 감소", "한 번의 유효한 타격에서 감소할 내구도입니다.", "내구도"),
+		"base_score_value": _entry("기본 점수 근거", "7단계 점수 시스템에 전달할 범퍼의 기본 점수 근거입니다.", "점"),
+		"recovery_enabled": _entry("파괴 후 복구", "내구도가 0이 된 범퍼를 안전 확인 뒤 다시 활성화합니다."),
+		"recovery_seconds": _entry("복구 대기 시간", "파괴된 뒤 안전 복구 확인을 시작하기까지 기다리는 시간입니다.", "초"),
+		"recovery_warning_seconds": _entry("복구 예고 시간", "안전 확인 뒤 범퍼가 다시 활성화되기 전에 예고하는 시간입니다.", "초"),
+		"recovery_safe_margin_board_ratio": _entry("안전 복구 여백", "공과 겹친 채 복구하지 않도록 충돌 영역 바깥에 더하는 여백입니다.", "보드 비율"),
+		"bounce_speed_multiplier": _entry("반동 속도 배율", "반동 범퍼가 기본 반사 속도에 곱하는 값입니다.", "배"),
+		"track_speed_board_per_second": _entry("경로 이동 속도", "경로 범퍼가 공을 경로 지점 사이로 안내하는 속도입니다.", "보드 폭/초"),
+		"shot_speed_board_per_second": _entry("목표 발사 속도", "발사 범퍼가 공을 목표 지점 방향으로 내보내는 속도입니다.", "보드 폭/초"),
+		"shot_direction_error_degrees": _entry("목표 방향 오차", "발사 목표 방향에 적용할 최대 오차입니다. 0이면 정확히 목표를 향합니다.", "°", "°"),
 	},
 	"FlipperDefinition": {
 		"motion_profile": _entry("플리퍼 작동 설정", "플리퍼의 크기·회전 시간·복귀 시간·공 패링 힘을 모아 둔 설정입니다."),

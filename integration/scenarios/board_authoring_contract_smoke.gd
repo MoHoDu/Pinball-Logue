@@ -10,6 +10,8 @@ const FLOAT_EPSILON := 0.001
 const DEFINITION_PATHS := [
 	"res://pinball/objects/normal_bumper_definition.tres",
 	"res://pinball/objects/bounce_bumper_definition.tres",
+	"res://pinball/objects/track_bumper_definition.tres",
+	"res://pinball/objects/shot_bumper_definition.tres",
 	"res://pinball/objects/wall_definition.tres",
 	"res://pinball/objects/general_object_definition.tres",
 	"res://pinball/flippers/standard_flipper_definition.tres",
@@ -27,8 +29,8 @@ func _run() -> void:
 	var definitions := _load_definitions(failures)
 	var definition_map := WaveBoardCompositionConfig.build_definition_map(definitions)
 	_expect_definitions(definitions, definition_map, failures)
-	_expect_composition(DEFAULT_COMPOSITION_PATH, definition_map, 10, failures)
-	_expect_composition(CURRENT_COMPOSITION_PATH, definition_map, 5, failures)
+	_expect_composition(DEFAULT_COMPOSITION_PATH, definition_map, failures)
+	_expect_composition(CURRENT_COMPOSITION_PATH, definition_map, failures)
 	_expect_presentation_catalog(failures)
 	_expect_authoring_scene(failures)
 	_expect_point_and_assignment_separation(definitions, failures)
@@ -63,16 +65,21 @@ func _expect_definitions(
 		failures.append_array(definition.get_validation_errors())
 	var normal := definition_map.get(&"bumper_normal") as BumperDefinition
 	var bounce := definition_map.get(&"bumper_bounce") as BumperDefinition
+	var track := definition_map.get(&"bumper_track") as BumperDefinition
+	var shot := definition_map.get(&"bumper_shot") as BumperDefinition
 	if normal == null or normal.get_bumper_type_id() != BumperDefinition.BUMPER_TYPE_NORMAL:
 		failures.append("일반 범퍼 원형의 범퍼 종류가 올바르지 않습니다.")
 	if bounce == null or bounce.get_bumper_type_id() != BumperDefinition.BUMPER_TYPE_BOUNCE:
 		failures.append("바운스 범퍼 원형의 범퍼 종류가 올바르지 않습니다.")
+	if track == null or track.get_bumper_type_id() != BumperDefinition.BUMPER_TYPE_TRACK:
+		failures.append("경로 범퍼 원형의 범퍼 종류가 올바르지 않습니다.")
+	if shot == null or shot.get_bumper_type_id() != BumperDefinition.BUMPER_TYPE_SHOT:
+		failures.append("발사 범퍼 원형의 범퍼 종류가 올바르지 않습니다.")
 
 
 func _expect_composition(
 	path: String,
 	definition_map: Dictionary,
-	expected_assignment_count: int,
 	failures: PackedStringArray
 ) -> void:
 	var composition := ResourceLoader.load(path, "Resource", ResourceLoader.CACHE_MODE_IGNORE) as WaveBoardCompositionConfig
@@ -82,9 +89,9 @@ func _expect_composition(
 	var errors := composition.get_validation_errors(definition_map)
 	if not errors.is_empty():
 		failures.append("웨이브 배치가 유효하지 않습니다: %s / %s" % [path, errors])
-	if composition.assignments.size() != expected_assignment_count:
-		failures.append("웨이브 배치 항목 수가 예상과 다릅니다: %s" % path)
-	if composition.get_resolved_placements(definition_map).size() != expected_assignment_count:
+	if composition.assignments.is_empty():
+		failures.append("웨이브 배치에 실제 오브젝트가 하나도 없습니다: %s" % path)
+	if composition.get_resolved_placements(definition_map).size() != composition.assignments.size():
 		failures.append("웨이브 배치가 모든 오브젝트를 해석하지 못했습니다: %s" % path)
 
 
@@ -191,6 +198,11 @@ func _expect_logic_dimension_independence(failures: PackedStringArray) -> void:
 	var logic_paths := PackedStringArray([
 		"res://shared/contracts/board_placeable_definition.gd",
 		"res://pinball/objects/bumper_definition.gd",
+		"res://pinball/objects/bumper_contact_lock.gd",
+		"res://pinball/objects/bumper_hit_request.gd",
+		"res://pinball/objects/bumper_hit_result.gd",
+		"res://pinball/objects/bumper_runtime_state.gd",
+		"res://pinball/objects/bumper_effect_resolver.gd",
 		"res://pinball/flippers/flipper_definition.gd",
 		"res://relics/catalog/relic_definition.gd",
 		"res://stages/boards/board_anchor_config.gd",

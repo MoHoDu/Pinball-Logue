@@ -7,7 +7,7 @@
 script = ExtResource("2_anchor")
 anchor_id = &"launch_main"
 anchor_type = "launch"
-board_position = Vector2(0.38, 0.24)
+board_position = Vector2(0.40104896, 0.119054325)
 
 [sub_resource type="Resource" id="Resource_drain"]
 script = ExtResource("2_anchor")
@@ -23,12 +23,12 @@ board_position = Vector2(-0.3441413, -0.3631612)
 [sub_resource type="Resource" id="Resource_bumper_top"]
 script = ExtResource("2_anchor")
 anchor_id = &"bumper_top"
-board_position = Vector2(-0.0040741647, -0.42806152)
+board_position = Vector2(-0.10243844, -0.3891708)
 
 [sub_resource type="Resource" id="Resource_bumper_top_right"]
 script = ExtResource("2_anchor")
 anchor_id = &"bumper_top_right"
-board_position = Vector2(0.19548082, -0.3729946)
+board_position = Vector2(0.34023875, -0.34084985)
 
 [sub_resource type="Resource" id="Resource_bumper_mid_left"]
 script = ExtResource("2_anchor")
@@ -44,21 +44,21 @@ board_position = Vector2(0.1349936, -0.205827)
 script = ExtResource("2_anchor")
 anchor_id = &"flipper_left"
 anchor_type = "flipper"
-board_position = Vector2(-0.38095346, 0.5)
+board_position = Vector2(-0.3211721, 0.5)
 rotation_degrees = 12.0
 snap_to_boundary = true
 boundary_edge_index = 2
-boundary_edge_offset = 0.9538593043273772
+boundary_edge_offset = 0.8846537325049812
 
 [sub_resource type="Resource" id="Resource_flipper_right"]
 script = ExtResource("2_anchor")
 anchor_id = &"flipper_right"
 anchor_type = "flipper"
-board_position = Vector2(0.32, 0.32)
+board_position = Vector2(0.28538185, 0.5)
 rotation_degrees = -12.0
 snap_to_boundary = true
-boundary_edge_index = 1
-boundary_edge_offset = 0.82
+boundary_edge_index = 2
+boundary_edge_offset = 0.18247978751004873
 
 [sub_resource type="Resource" id="Resource_relic_left"]
 script = ExtResource("2_anchor")
@@ -95,7 +95,7 @@ rotation_degrees = 90.0
 [sub_resource type="Resource" id="Resource_2w5q2"]
 script = ExtResource("2_anchor")
 anchor_id = &"bumper_01"
-board_position = Vector2(0.19762868, -0.06619291)
+board_position = Vector2(0.24178588, -0.066475056)
 
 [sub_resource type="Resource" id="Resource_1cphp"]
 script = ExtResource("2_anchor")
@@ -107,18 +107,24 @@ script = ExtResource("2_anchor")
 anchor_id = &"bumper_03"
 board_position = Vector2(-0.33719462, -0.111426465)
 
-[sub_resource type="Resource" id="Resource_wtqkj"]
-script = ExtResource("2_anchor")
-anchor_id = &"bumper_04"
-board_position = Vector2(0.5, -0.5)
-
 [sub_resource type="Resource" id="Resource_5n28j"]
 script = ExtResource("2_anchor")
 anchor_id = &"object_01"
 anchor_type = "object"
 board_position = Vector2(0.06061751, -0.05150597)
 
+[sub_resource type="Resource" id="Resource_wtqkj"]
+script = ExtResource("2_anchor")
+anchor_id = &"object_02"
+anchor_type = "object"
+board_position = Vector2(0.29973918, 0.23659536)
+
+[sub_resource type="Resource" id="Resource_1ro65"]
+script = ExtResource("2_anchor")
+anchor_id = &"bumper_04"
+board_position = Vector2(0.14262323, -0.3835736)
+
 [resource]
 script = ExtResource("1_layout")
 boundary_points = PackedVector2Array(-0.4980414, -0.49099523, 0.5, -0.5, 0.4430121, 0.5, -0.42081085, 0.5)
-anchors = Array[ExtResource("2_anchor")]([SubResource("Resource_launch"), SubResource("Resource_drain"), SubResource("Resource_bumper_top_left"), SubResource("Resource_bumper_top"), SubResource("Resource_bumper_top_right"), SubResource("Resource_bumper_mid_left"), SubResource("Resource_bumper_mid_right"), SubResource("Resource_flipper_left"), SubResource("Resource_flipper_right"), SubResource("Resource_relic_left"), SubResource("Resource_relic_center"), SubResource("Resource_relic_right"), SubResource("Resource_object_left"), SubResource("Resource_object_right"), SubResource("Resource_2w5q2"), SubResource("Resource_1cphp"), SubResource("Resource_4o0iy"), SubResource("Resource_wtqkj"), SubResource("Resource_5n28j")])
+anchors = Array[ExtResource("2_anchor")]([SubResource("Resource_launch"), SubResource("Resource_drain"), SubResource("Resource_bumper_top_left"), SubResource("Resource_bumper_top"), SubResource("Resource_bumper_top_right"), SubResource("Resource_bumper_mid_left"), SubResource("Resource_bumper_mid_right"), SubResource("Resource_flipper_left"), SubResource("Resource_flipper_right"), SubResource("Resource_relic_left"), SubResource("Resource_relic_center"), SubResource("Resource_relic_right"), SubResource("Resource_object_left"), SubResource("Resource_object_right"), SubResource("Resource_2w5q2"), SubResource("Resource_1cphp"), SubResource("Resource_4o0iy"), SubResource("Resource_5n28j"), SubResource("Resource_wtqkj"), SubResource("Resource_1ro65")])
