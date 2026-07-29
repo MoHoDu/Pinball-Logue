@@ -118,3 +118,15 @@ read_when:
 - 갱신 문서: `stages/boards/SPEC.md`, `stages/waves/SPEC.md`, `stages/boards/EDITOR_GUIDE.md`, `integration/.work/basic-system-foundation/daily/2026-07-29.md`
 - 검증 기준: 추가 전 지점 선택, 플리퍼 안쪽 맞춤·회전, 네 범퍼 원형 오류 없는 적용, 보드 크기 증감, 현재 보드 한 버튼 웨이브 적용, 기존 공·플리퍼·범퍼 회귀
 - 승인 기록: 2026-07-29 사용자가 보드 제작 도구와 실제 적용 공간의 파편화 문제를 보고하고 10분 내 빠른 수정과 한 곳에서의 편집을 요청함.
+
+## DEC-20260729-07 — 낙하 뒤 스코어 목표 단일 판정
+
+- 상태: approved
+- 요청자: 사용자
+- 변경 전: 범퍼 타격은 기본 점수 근거만 제공하고 현재 스코어·콤보·목표·실패를 계산하지 않았다. 공을 모두 사용한 뒤에는 판정 예정 문구만 표시했다.
+- 변경 후: 유효한 범퍼 타격은 `기본 점수 × 현재 콤보 배수`를 정수로 반올림해 스코어에 한 번만 반영한다. 콤보 시간 안의 연속 타격마다 배수가 설정값만큼 상승하고 상한을 지킨다. 목표 스코어를 먼저 넘겨도 현재 발사를 계속하며, 공이 낙하한 뒤에만 `웨이브 클리어`, `다음 공 선택`, `스테이지 실패 후보` 중 하나를 한 번 확정한다.
+- 변경 이유: 목표 달성 뒤에도 현재 공으로 최대 스코어를 갱신하는 재미를 보존하고, 마지막 공의 마지막 타격을 누락하지 않으면서 중복 충돌·중복 종료를 막기 위해서다.
+- 영향받는 기능: `pinball/scoring`, `pinball/shot`, `stages/objectives`, `game_flow/wave`, `ui/gameplay`, 현재 웨이브 플레이 화면, `integration`
+- 갱신 문서: `pinball/scoring/SPEC.md`, `stages/objectives/SPEC.md`, `ui/gameplay/SPEC.md`, `integration/.work/basic-system-foundation/PLAN.md`, `integration/.work/basic-system-foundation/QA.md`
+- 검증 기준: 계산식·반올림, 콤보 시간 경계, 타격 ID 중복 방지, 목표 초과 중 발사 유지, 낙하 뒤 단일 클리어·다음 공·실패, 마지막 공 결과 선반영, 스코어·코인 분리
+- 승인 기록: 2026-07-29 사용자가 6단계 커밋 뒤 7단계 스코어 목표 구현을 승인함.

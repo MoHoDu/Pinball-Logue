@@ -6,11 +6,15 @@
 [ext_resource type="Script" uid="uid://r24i5gu2fl78" path="res://ui/gameplay/wave_input_router.gd" id="4_input"]
 [ext_resource type="Resource" uid="uid://srs5p1rd5lix" path="res://stages/waves/default_mockup_ball_loadout.tres" id="5_loadout"]
 [ext_resource type="Resource" uid="uid://3fy585mhncu4" path="res://pinball/launcher/default_launch_config.tres" id="6_launch"]
+[ext_resource type="Resource" path="res://pinball/scoring/default_score_config.tres" id="7_score"]
+[ext_resource type="Resource" path="res://stages/objectives/default_score_objective.tres" id="8_objective"]
 
 [node name="WaveScreen" type="Node2D" unique_id=792703884]
 script = ExtResource("1_screen")
 ball_loadout = ExtResource("5_loadout")
 launch_config = ExtResource("6_launch")
+score_config = ExtResource("7_score")
+score_objective = ExtResource("8_objective")
 
 [node name="PlayableBoard2D" parent="." unique_id=1102690820 instance=ExtResource("3_board")]
 position = Vector2(640, 382)
@@ -32,7 +36,7 @@ script = ExtResource("4_input")
 offset_left = 20.0
 offset_top = 20.0
 offset_right = 350.0
-offset_bottom = 292.0
+offset_bottom = 382.0
 theme = ExtResource("2_theme")
 
 [node name="Content" type="VBoxContainer" parent="Overlay/LeftPanel" unique_id=845219307]
@@ -51,6 +55,15 @@ text = "현재 단계: 공 선택"
 [node name="Balls" type="Label" parent="Overlay/LeftPanel/Content" unique_id=489610053]
 layout_mode = 2
 text = "웨이브 공"
+
+[node name="Score" type="Label" parent="Overlay/LeftPanel/Content"]
+layout_mode = 2
+text = "현재 스코어: 0 / 목표 1000
+남은 목표: 1000점"
+
+[node name="Combo" type="Label" parent="Overlay/LeftPanel/Content"]
+layout_mode = 2
+text = "콤보: 0회 · ×1.0"
 
 [node name="RightPanel" type="PanelContainer" parent="Overlay" unique_id=428106596]
 offset_left = 938.0

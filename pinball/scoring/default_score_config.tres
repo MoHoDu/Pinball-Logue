@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ScoreConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://pinball/scoring/score_config.gd" id="1_config"]
+
+[resource]
+script = ExtResource("1_config")
+combo_window_seconds = 2.0
+multiplier_step = 0.5
+maximum_multiplier = 5.0

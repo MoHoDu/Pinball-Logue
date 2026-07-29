@@ -12,10 +12,14 @@ const DEFAULT_FLIPPER_DIRECTION_PRIORITY: Array[StringName] = [
 
 @export var ball_loadout: WaveBallLoadoutConfig
 @export var launch_config: LaunchConfig
+@export var score_config: ScoreConfig
+@export var score_objective: ScoreObjectiveConfig
 @export_node_path("PlayableBoard2D") var playable_board_path := NodePath("PlayableBoard2D")
 @export_node_path("WaveInputRouter") var input_router_path := NodePath("WaveInputRouter")
 @export_node_path("Label") var phase_label_path := NodePath("Overlay/LeftPanel/Content/Phase")
 @export_node_path("Label") var balls_label_path := NodePath("Overlay/LeftPanel/Content/Balls")
+@export_node_path("Label") var score_label_path := NodePath("Overlay/LeftPanel/Content/Score")
+@export_node_path("Label") var combo_label_path := NodePath("Overlay/LeftPanel/Content/Combo")
 @export_node_path("Label") var aim_label_path := NodePath("Overlay/RightPanel/Content/Aim")
 @export_node_path("Label") var strength_label_path := NodePath("Overlay/RightPanel/Content/Strength")
 @export_node_path("Label") var flipper_label_path := NodePath("Overlay/RightPanel/Content/Flipper")
@@ -27,6 +31,8 @@ var _board: PlayableBoard2D
 var _input_router: WaveInputRouter
 var _phase_label: Label
 var _balls_label: Label
+var _score_label: Label
+var _combo_label: Label
 var _aim_label: Label
 var _strength_label: Label
 var _flipper_label: Label
@@ -38,6 +44,8 @@ var _inventory := WaveBallInventory.new()
 var _shot_controller := ShotController.new()
 var _physics_adapter := BallPhysics2DAdapter.new()
 var _launch_strategy := LaunchVelocityStrategy.new()
+var _score_tracker := ScoreTracker.new()
+var _outcome_resolver := NormalWaveScoreOutcomeResolver.new()
 var _aim_angle_degrees := 0.0
 var _aim_strength := 0.0
 var _shot_sequence := 0
@@ -47,6 +55,7 @@ var _current_shot_id: StringName = &""
 var _selected_flipper_direction: StringName = &""
 var _selected_flipper_target: Dictionary = {}
 var _wave_complete := false
+var _wave_result_action_id: StringName = &""
 
 
 func _ready() -> void:
@@ -68,6 +77,8 @@ func _resolve_nodes() -> void:
 	_input_router = get_node_or_null(input_router_path) as WaveInputRouter
 	_phase_label = get_node_or_null(phase_label_path) as Label
 	_balls_label = get_node_or_null(balls_label_path) as Label
+	_score_label = get_node_or_null(score_label_path) as Label
+	_combo_label = get_node_or_null(combo_label_path) as Label
 	_aim_label = get_node_or_null(aim_label_path) as Label
 	_strength_label = get_node_or_null(strength_label_path) as Label
 	_flipper_label = get_node_or_null(flipper_label_path) as Label
@@ -81,6 +92,8 @@ func _setup_play_screen() -> String:
 		return "플레이 보드 또는 입력 라우터가 연결되지 않았습니다."
 	if ball_loadout == null or launch_config == null:
 		return "웨이브 공 목록 또는 발사 설정이 연결되지 않았습니다."
+	if score_config == null or score_objective == null:
+		return "스코어 계산 설정 또는 일반 웨이브 목표가 연결되지 않았습니다."
 	var board_errors := _board.get_validation_errors()
 	if not board_errors.is_empty():
 		return board_errors[0]
@@ -90,6 +103,12 @@ func _setup_play_screen() -> String:
 	var launch_errors := launch_config.get_validation_errors()
 	if not launch_errors.is_empty():
 		return launch_errors[0]
+	var score_error := _score_tracker.configure(score_config, score_objective.target_score)
+	if not score_error.is_empty():
+		return score_error
+	var outcome_error := _outcome_resolver.configure(score_objective)
+	if not outcome_error.is_empty():
+		return outcome_error
 	if not _input_router.configure_aim_mode(launch_config.get_aim_mode_id()):
 		return "지원하지 않는 조준 방식입니다."
 	var physics_error := _physics_adapter.configure(
@@ -115,6 +134,39 @@ func _connect_inputs() -> void:
 	_input_router.flipper_selection_requested.connect(_on_flipper_selection_requested)
 	_input_router.flipper_action_requested.connect(_on_flipper_action_requested)
 	_board.ball_exit_detected.connect(_on_ball_exit_detected)
+	_board.bumper_hit_applied.connect(_on_bumper_hit_applied)
+
+
+func _process(_delta: float) -> void:
+	if _score_tracker.expire_combo_if_needed(_get_elapsed_seconds()):
+		_refresh_hud()
+
+
+func _on_bumper_hit_applied(hit_result: BumperHitResult) -> void:
+	if (
+		_wave_complete
+		or _shot_controller.current_phase != ShotPhases.IN_PLAY
+		or hit_result == null
+		or hit_result.shot_id != _shot_controller.get_active_shot_id()
+	):
+		return
+	var award := _score_tracker.register_bumper_hit(
+		hit_result,
+		_get_elapsed_seconds()
+	)
+	if not award.applied:
+		return
+	if award.target_reached_now:
+		_show_status(
+			"목표 스코어를 달성했습니다. 현재 공이 낙하할 때까지 추가 스코어를 획득할 수 있습니다."
+		)
+	else:
+		_show_status("범퍼 타격! +%d점 · %d콤보 ×%.1f" % [
+			award.score_added,
+			award.combo_count,
+			award.multiplier,
+		])
+	_refresh_hud()
 
 
 func _on_ball_slot_requested(slot_number: int) -> void:
@@ -305,16 +357,46 @@ func _finish_resolution(shot_id: StringName) -> void:
 		_show_status(return_error)
 		return
 	_current_shot_id = &""
-	if _inventory.get_remaining_count() <= 0:
+	var outcome := _outcome_resolver.resolve_after_shot(
+		shot_id,
+		_score_tracker.current_score,
+		_inventory.get_remaining_count()
+	)
+	_board.clear_finished_shot(shot_id)
+	if not outcome.accepted:
 		_wave_complete = true
 		_input_router.enter_complete()
-		_show_status("가져온 공을 모두 사용했습니다. 스코어 성공·실패 판정은 7단계에서 연결됩니다.")
-	else:
-		_input_router.enter_ball_selection()
-		_select_current_inventory_ball()
-		_show_status("다음 공을 선택한 뒤 Space로 확정하세요.")
-	_board.clear_finished_shot(shot_id)
+		_show_status("웨이브 결과 판정 실패: %s" % outcome.rejection_reason)
+		_refresh_hud()
+		return
+	match outcome.outcome:
+		WaveScoreOutcomeResult.OUTCOME_CONTINUE:
+			_input_router.enter_ball_selection()
+			_select_current_inventory_ball()
+			_show_status("다음 공을 선택한 뒤 Space로 확정하세요.")
+		WaveScoreOutcomeResult.OUTCOME_CLEARED:
+			_complete_wave(
+				ProgressionActions.WAVE_CLEARED,
+				"웨이브 클리어! 현재 공의 낙하까지 획득한 최종 스코어는 %d점입니다."
+				% _score_tracker.current_score
+			)
+		WaveScoreOutcomeResult.OUTCOME_FAILED:
+			_complete_wave(
+				ProgressionActions.WAVE_FAILED,
+				"목표 스코어에 도달하지 못해 스테이지에 실패했습니다. 최종 스코어: %d점"
+				% _score_tracker.current_score
+			)
 	_refresh_hud()
+
+
+func _complete_wave(action_id: StringName, message: String) -> void:
+	if _wave_result_action_id != &"":
+		return
+	_wave_complete = true
+	_wave_result_action_id = action_id
+	_input_router.enter_complete()
+	_show_status(message)
+	progression_requested.emit(action_id)
 
 
 func _refresh_hud() -> void:
@@ -322,6 +404,13 @@ func _refresh_hud() -> void:
 		_phase_label.text = "현재 단계: %s" % _get_phase_label()
 	if _balls_label != null:
 		_balls_label.text = _get_ball_list_text()
+	if _score_label != null:
+		_score_label.text = _get_score_text()
+	if _combo_label != null:
+		_combo_label.text = "콤보: %d회 · ×%.1f" % [
+			_score_tracker.combo_count,
+			_score_tracker.current_multiplier,
+		]
 	if _aim_label != null:
 		_aim_label.text = "조준 방식: %s\n방향: %+.1f°" % [
 			_get_aim_mode_label(),
@@ -419,8 +508,28 @@ func _get_ball_list_text() -> String:
 	return "\n".join(lines)
 
 
+func _get_score_text() -> String:
+	if score_objective == null:
+		return "현재 스코어: 0\n남은 목표: 설정 오류"
+	var remaining_score := maxi(score_objective.target_score - _score_tracker.current_score, 0)
+	if _score_tracker.target_reached:
+		return "현재 스코어: %d / 목표 %d\n남은 목표: 달성 · 현재 공 계속 진행" % [
+			_score_tracker.current_score,
+			score_objective.target_score,
+		]
+	return "현재 스코어: %d / 목표 %d\n남은 목표: %d점" % [
+		_score_tracker.current_score,
+		score_objective.target_score,
+		remaining_score,
+	]
+
+
 func _get_phase_label() -> String:
 	if _wave_complete:
+		if _wave_result_action_id == ProgressionActions.WAVE_CLEARED:
+			return "웨이브 클리어"
+		if _wave_result_action_id == ProgressionActions.WAVE_FAILED:
+			return "스테이지 실패"
 		return "발사 종료"
 	match _shot_controller.current_phase:
 		ShotPhases.BALL_SELECTION:
@@ -436,7 +545,11 @@ func _get_phase_label() -> String:
 
 func _get_controls_text() -> String:
 	if _wave_complete:
-		return "가져온 공 사용 완료"
+		if _wave_result_action_id == ProgressionActions.WAVE_CLEARED:
+			return "웨이브 클리어\n결과 화면 이동 중"
+		if _wave_result_action_id == ProgressionActions.WAVE_FAILED:
+			return "스테이지 실패\n리트라이 이동 중"
+		return "발사 종료"
 	match _shot_controller.current_phase:
 		ShotPhases.BALL_SELECTION:
 			return "1·2·3: 공 선택\n방향키: 남은 공 이동\nSpace: 선택 확정"
@@ -570,6 +683,30 @@ func get_selected_flipper_direction() -> StringName:
 
 func is_wave_mockup_complete() -> bool:
 	return _wave_complete
+
+
+func get_current_score() -> int:
+	return _score_tracker.current_score
+
+
+func get_combo_count() -> int:
+	return _score_tracker.combo_count
+
+
+func get_current_score_multiplier() -> float:
+	return _score_tracker.current_multiplier
+
+
+func is_score_target_reached() -> bool:
+	return _score_tracker.target_reached
+
+
+func get_wave_result_action_id() -> StringName:
+	return _wave_result_action_id
+
+
+func _get_elapsed_seconds() -> float:
+	return float(Time.get_ticks_usec()) / 1000000.0
 
 
 func _is_finite_vector(value: Vector2) -> bool:

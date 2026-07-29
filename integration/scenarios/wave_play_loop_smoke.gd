@@ -4,6 +4,7 @@ const WAVE_SCENE := preload("res://app/navigation/screens/wave_screen.tscn")
 
 var _failures := PackedStringArray()
 var _bumper_hit_results: Array[BumperHitResult] = []
+var _previous_shot_id: StringName = &""
 
 
 func _init() -> void:
@@ -131,6 +132,13 @@ func _run() -> void:
 				screen._refresh_hud()
 		router._unhandled_input(_key_event(KEY_SPACE))
 		_expect(screen.get_shot_phase() == ShotPhases.IN_PLAY, "두 번째 Space로 공을 발사하지 못했습니다.")
+		if expected_remaining == 1 and _previous_shot_id != &"":
+			var score_before_delayed_hit := screen.get_current_score()
+			screen._on_bumper_hit_applied(_make_delayed_hit(_previous_shot_id))
+			_expect(
+				screen.get_current_score() == score_before_delayed_hit,
+				"다음 공 진행 중 이전 발사의 지연 타격이 스코어에 반영됐습니다."
+			)
 		_expect(
 			screen.get_selected_flipper_direction() == &"down"
 			and not screen.get_selected_flipper_target().is_empty(),
@@ -185,6 +193,7 @@ func _run() -> void:
 					% [collision_frames, _bumper_hit_results[0].collision_strength_board_per_second]
 				)
 		var shot_id := screen.get_active_shot_id()
+		_previous_shot_id = shot_id
 		board.ball_exit_detected.emit(shot_id, ShotEndReasons.DRAIN)
 		board.ball_exit_detected.emit(shot_id, ShotEndReasons.DRAIN)
 		await process_frame
@@ -214,6 +223,28 @@ func _key_event(keycode: Key, echo := false) -> InputEventKey:
 	event.pressed = true
 	event.echo = echo
 	return event
+
+
+func _make_delayed_hit(previous_shot_id: StringName) -> BumperHitResult:
+	var hit := BumperHitResult.new()
+	hit.is_applied = true
+	hit.hit_id = StringName("delayed_%s" % previous_shot_id)
+	hit.contact_id = StringName("contact_%s" % hit.hit_id)
+	hit.shot_id = previous_shot_id
+	hit.ball_id = &"standard_ball"
+	hit.point_id = &"bumper_top"
+	hit.content_id = &"bumper_normal"
+	hit.bumper_type = BumperDefinition.BUMPER_TYPE_NORMAL
+	hit.effect_type = BumperHitResult.EFFECT_NORMAL_REFLECT
+	hit.contact_board_normal = Vector2.UP
+	hit.incoming_board_velocity = Vector2.DOWN
+	hit.reflected_board_velocity = Vector2.UP
+	hit.collision_strength_board_per_second = 1.0
+	hit.base_score_value = 100
+	hit.durability_before = 3
+	hit.durability_after = 2
+	hit.output_board_velocity = Vector2.UP
+	return hit
 
 
 func _get_board_line_length(line: Line2D, board: PlayableBoard2D) -> float:

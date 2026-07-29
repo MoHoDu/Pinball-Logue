@@ -153,6 +153,14 @@ static var PRESENTATIONS: Dictionary = {
 		"mouse_max_distance_board_ratio": _entry("마우스 최대 조준 거리", "최대 발사 세기가 되는 마우스와 발사 지점 사이 거리입니다.", "보드 비율"),
 		"aim_guide_length_board_ratio": _entry("조준선 길이", "예상 발사 방향을 보여 주는 선의 길이입니다.", "보드 비율"),
 	},
+	"ScoreConfig": {
+		"combo_window_seconds": _entry("콤보 시간", "이 시간 안에 다음 범퍼를 타격하면 콤보가 이어집니다.", "초"),
+		"multiplier_step": _entry("타격당 배수 증가", "콤보가 한 번 늘 때마다 스코어 배수가 증가하는 양입니다.", "배"),
+		"maximum_multiplier": _entry("최대 스코어 배수", "콤보로 올라갈 수 있는 스코어 배수의 상한입니다.", "배"),
+	},
+	"ScoreObjectiveConfig": {
+		"target_score": _entry("목표 스코어", "공을 모두 사용한 뒤 웨이브 성공 여부를 판단하는 기준 스코어입니다.", "점"),
+	},
 }
 
 
