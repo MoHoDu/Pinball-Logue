@@ -130,3 +130,16 @@ read_when:
 - 갱신 문서: `pinball/scoring/SPEC.md`, `stages/objectives/SPEC.md`, `ui/gameplay/SPEC.md`, `integration/.work/basic-system-foundation/PLAN.md`, `integration/.work/basic-system-foundation/QA.md`
 - 검증 기준: 계산식·반올림, 콤보 시간 경계, 타격 ID 중복 방지, 목표 초과 중 발사 유지, 낙하 뒤 단일 클리어·다음 공·실패, 마지막 공 결과 선반영, 스코어·코인 분리
 - 승인 기록: 2026-07-29 사용자가 6단계 커밋 뒤 7단계 스코어 목표 구현을 승인함.
+
+## DEC-20260729-08 — XP 구도 기반 최종 2D 로우폴리 프로토타입 채택
+
+- 상태: approved
+- 요청자: 사용자
+- 변경 전: 최종 그래픽의 2D·3D 선택은 미확정이었고, 현재 2D 목업은 58° 기본 투영과 전체 웨이브·성장 구조를 함께 검증하는 범용 화면이었다.
+- 변경 후: 최종 보드와 개별 리소스의 표현은 2D 래스터 아트로 고정한다. Windows XP 3D 핀볼 화면의 고정 하이앵글, 상단이 좁고 하단이 넓은 긴 사다리꼴 보드, 우측 투입 레인, 상단 범퍼 군집, 하단 좌우 플리퍼·중앙 드레인과 우측 세로 패널 비율을 구도 기준으로 사용한다. 산업 기계 사진의 녹슨 금속·황동·그을음·텅스텐 조명을 각진 면, 제한 명암, 저해상도 질감, 디더와 그레인의 2D 로우폴리풍으로 재해석한다. 첫 플레이 가능 프로토타입에는 공·플리퍼·범퍼·드레인만 연결하고 기존 나머지 시스템과 데이터는 삭제하지 않는다.
+- 변경 이유: 최종 표현 차원과 화면 구도를 명확히 하고, 핵심 공 반동과 플리퍼 조작을 일관된 아트 안에서 빠르게 검증하기 위해서다.
+- 영향받는 기능: `app/`, `stages/boards`, `pinball/ball`, `pinball/flippers`, `pinball/objects`, `presentation/`, `integration/`
+- 갱신 문서: `app/SPEC.md`, `stages/boards/SPEC.md`, `pinball/ball/SPEC.md`, `pinball/flippers/SPEC.md`, `pinball/objects/SPEC.md`, `stages/boards/.work/xp-low-poly-pinball-prototype/PLAN.md`
+- 검증 기준: 전용 장면에서 2D 노드만 사용, XP형 화면 비율과 장치 구역 유지, 공·플리퍼·범퍼·드레인 외 기능 미연결, 활성 공 0/1, 범퍼 반동, 좌우 플리퍼 작동·복귀, 드레인 단일 결과와 재투입, 기존 기능 회귀
+- 승인 기록: 2026-07-29 사용자가 첨부한 네 이미지를 시점·구성·산업 비주얼·저해상도 로우폴리 질감 기준으로 지정하고, Godot 구현 범위를 공·플리퍼·범퍼·드레인으로 제한한 뒤 계획 1~2단계를 승인함.
+- 보존 사항: D-01~D-09와 플리퍼·공·범퍼의 숫자 물리값은 이 결정에서 확정하지 않는다. `DEC-20260728-02`의 최종 차원 미확정 부분만 이 결정으로 대체하며 기존 차원 독립 데이터 계약은 보존한다.
