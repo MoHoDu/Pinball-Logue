@@ -4,7 +4,10 @@ extends Node2D
 @export_category("컨트롤러 설정")
 
 
-@export var is_active: bool = true;
+@export var is_active: bool = true:
+	set(value):
+		is_active = value
+		update_selection_visual()
 
 
 @export_category("플리퍼 설정")
@@ -40,6 +43,7 @@ var return_time: float = 0.12
 
 func _ready() -> void:
 	collect_flippers()
+	update_selection_visual()
 
 
 func collect_flippers() -> void:
@@ -72,3 +76,9 @@ func is_any_flipper_running() -> bool:
 			return true
 
 	return false
+
+
+func update_selection_visual() -> void:
+	for flipper: PinballFlipper in flippers:
+		if is_instance_valid(flipper):
+			flipper.set_selected_visual(is_active)

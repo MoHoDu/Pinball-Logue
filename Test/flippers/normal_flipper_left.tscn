@@ -2,6 +2,16 @@
 
 [ext_resource type="Script" uid="uid://bartghgyuhhe8" path="res://Test/flipper.gd" id="1_53moe"]
 [ext_resource type="Texture2D" uid="uid://x25woi2trsvl" path="res://Resources/Art/flippers/industrial_steel_flipper.png" id="2_1ei0w"]
+[ext_resource type="Shader" uid="uid://d2wx6fpflk13d" path="res://Test/shaders/selection_outline.gdshader" id="2_pnuaf"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_uk1me"]
+shader = ExtResource("2_pnuaf")
+shader_parameter/outline_enabled = false
+shader_parameter/outline_color = Color(18.892157, 15.300281, 0, 1)
+shader_parameter/outline_size = 1.678000032205
+shader_parameter/glow_size = 24.0
+shader_parameter/glow_strength = 1.0
+shader_parameter/emission_strength = 4.310000157225
 
 [node name="LeftFlipper" type="AnimatableBody2D" unique_id=1915782774]
 rotation = 0.2617994
@@ -9,6 +19,7 @@ script = ExtResource("1_53moe")
 flip_angle_degrees = -45.0
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=48376136]
+material = SubResource("ShaderMaterial_uk1me")
 texture = ExtResource("2_1ei0w")
 offset = Vector2(565, 0)
 

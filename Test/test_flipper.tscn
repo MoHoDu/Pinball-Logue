@@ -13,9 +13,19 @@ script = ExtResource("1_tg1pa")
 
 [node name="Controller01" parent="FlipperControllers" unique_id=1981825440 instance=ExtResource("1_yqxnb")]
 position = Vector2(0, 400)
-scale = Vector2(0.25, 0.25)
+scale = Vector2(0.2, 0.2)
 
 [node name="Controller02" parent="FlipperControllers" unique_id=552166194 instance=ExtResource("1_yqxnb")]
 position = Vector2(0, -400)
 rotation = 3.1415927
-scale = Vector2(0.25, 0.25)
+scale = Vector2(0.2, 0.2)
+
+[node name="Controller03" parent="FlipperControllers" unique_id=670024506 instance=ExtResource("1_yqxnb")]
+position = Vector2(-400, 0)
+rotation = 1.5707964
+scale = Vector2(0.2, 0.2)
+
+[node name="Controller04" parent="FlipperControllers" unique_id=1289061940 instance=ExtResource("1_yqxnb")]
+position = Vector2(400, 0)
+rotation = -1.5707964
+scale = Vector2(0.2, 0.2)

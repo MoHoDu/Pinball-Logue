@@ -18,13 +18,31 @@ var rest_rotation: float
 var is_flipping: bool = false
 
 
+@export_group("쉐이더")
+
+@onready var sprite: Sprite2D = $Sprite2D
+
+@export var shader_active_value: String = "outline_enabled"
+
+
 func _ready() -> void:
 	rest_rotation = rotation
 
+	# 다른 플리퍼와 Material 상태를 공유하지 않도록 복제
+	if sprite.material:
+		sprite.material = sprite.material.duplicate()
 
-# func _physics_process(_delta: float) -> void:
-# 	if Input.is_action_just_pressed(input_action) and not is_flipping:
-# 		play_flip()
+
+func set_selected_visual(is_selected: bool) -> void:
+	var shader_material := sprite.material as ShaderMaterial
+
+	if shader_material == null:
+		return 
+
+	shader_material.set_shader_parameter(
+		shader_active_value,
+		is_selected
+	)
 
 
 func play_flip(attack_time: float, return_time: float, wait_time: float) -> void:
