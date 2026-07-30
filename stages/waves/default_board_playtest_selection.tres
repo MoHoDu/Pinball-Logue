@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="BoardPlaytestSelectionConfig" format=3]
+[gd_resource type="Resource" script_class="BoardPlaytestSelectionConfig" format=3 uid="uid://40fujurdgtqm"]
 
-[ext_resource type="Script" path="res://stages/waves/board_playtest_selection_config.gd" id="1_selection"]
-[ext_resource type="Resource" path="res://stages/waves/default_wave_board_composition.tres" id="2_composition"]
+[ext_resource type="Script" uid="uid://ddclef72xndxg" path="res://stages/waves/board_playtest_selection_config.gd" id="1_selection"]
+[ext_resource type="Resource" uid="uid://bio1etrqhtkut" path="res://stages/waves/default_wave_board_composition.tres" id="2_composition"]
 
 [resource]
 script = ExtResource("1_selection")

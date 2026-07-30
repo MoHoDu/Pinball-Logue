@@ -7,13 +7,13 @@
 script = ExtResource("2_anchor")
 anchor_id = &"launch_main"
 anchor_type = "launch"
-board_position = Vector2(0.40104896, 0.119054325)
+board_position = Vector2(0.0015864149, 0.31674314)
 
 [sub_resource type="Resource" id="Resource_drain"]
 script = ExtResource("2_anchor")
 anchor_id = &"drain_main"
 anchor_type = "drain"
-board_position = Vector2(0, 0.46)
+board_position = Vector2(0.005999982, 0.5)
 
 [sub_resource type="Resource" id="Resource_bumper_top_left"]
 script = ExtResource("2_anchor")
@@ -44,21 +44,21 @@ board_position = Vector2(0.1349936, -0.205827)
 script = ExtResource("2_anchor")
 anchor_id = &"flipper_left"
 anchor_type = "flipper"
-board_position = Vector2(-0.3211721, 0.5)
-rotation_degrees = 12.0
+board_position = Vector2(-0.1107364, 0.5)
+rotation_degrees = 75.0
 snap_to_boundary = true
 boundary_edge_index = 2
-boundary_edge_offset = 0.8846537325049812
+boundary_edge_offset = 0.6410439834133611
 
 [sub_resource type="Resource" id="Resource_flipper_right"]
 script = ExtResource("2_anchor")
 anchor_id = &"flipper_right"
 anchor_type = "flipper"
-board_position = Vector2(0.28538185, 0.5)
-rotation_degrees = -12.0
+board_position = Vector2(0.12251848, 0.5)
+rotation_degrees = -72.0
 snap_to_boundary = true
 boundary_edge_index = 2
-boundary_edge_offset = 0.18247978751004873
+boundary_edge_offset = 0.3710176905616682
 
 [sub_resource type="Resource" id="Resource_relic_left"]
 script = ExtResource("2_anchor")

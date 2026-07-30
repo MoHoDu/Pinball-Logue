@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://dkrh5sg0oil1w" path="res://app/navigation/screen_route.gd" id="2_route"]
 [ext_resource type="PackedScene" path="res://app/navigation/screens/main_lobby_screen.tscn" id="3_main"]
 [ext_resource type="PackedScene" path="res://app/navigation/screens/stage_selection_screen.tscn" id="4_stage"]
-[ext_resource type="PackedScene" path="res://app/navigation/screens/wave_screen.tscn" id="5_wave"]
+[ext_resource type="PackedScene" uid="uid://dhvk0w4we8ist" path="res://app/navigation/screens/wave_screen.tscn" id="5_wave"]
 [ext_resource type="PackedScene" path="res://app/navigation/screens/reward_screen.tscn" id="6_reward"]
 [ext_resource type="PackedScene" path="res://app/navigation/screens/boss_screen.tscn" id="7_boss"]
 [ext_resource type="PackedScene" path="res://app/navigation/screens/results_screen.tscn" id="8_results"]
