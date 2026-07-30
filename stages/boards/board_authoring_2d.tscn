@@ -17,6 +17,7 @@
 [ext_resource type="Resource" path="res://pinball/objects/shot_bumper_definition.tres" id="14_shot"]
 
 [node name="BoardAuthoring2D" type="Node2D" unique_id=1713306520]
+rotation = -0.24533716
 script = ExtResource("1_mockup")
 layout_config = ExtResource("2_layout")
 view_config = ExtResource("3_view")

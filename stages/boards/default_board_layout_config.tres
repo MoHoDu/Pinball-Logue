@@ -7,58 +7,48 @@
 script = ExtResource("2_anchor")
 anchor_id = &"launch_main"
 anchor_type = "launch"
-board_position = Vector2(0.0015864149, 0.31674314)
+board_position = Vector2(-0.06156961, 0.3225239)
 
 [sub_resource type="Resource" id="Resource_drain"]
 script = ExtResource("2_anchor")
 anchor_id = &"drain_main"
 anchor_type = "drain"
-board_position = Vector2(0.005999982, 0.5)
+board_position = Vector2(-0.065983005, 0.47076473)
 
 [sub_resource type="Resource" id="Resource_bumper_top_left"]
 script = ExtResource("2_anchor")
 anchor_id = &"bumper_top_left"
-board_position = Vector2(-0.3441413, -0.3631612)
+board_position = Vector2(-0.01143774, -0.26573658)
 
 [sub_resource type="Resource" id="Resource_bumper_top"]
 script = ExtResource("2_anchor")
 anchor_id = &"bumper_top"
-board_position = Vector2(-0.10243844, -0.3891708)
+board_position = Vector2(-0.21089084, -0.19177078)
 
 [sub_resource type="Resource" id="Resource_bumper_top_right"]
 script = ExtResource("2_anchor")
 anchor_id = &"bumper_top_right"
-board_position = Vector2(0.34023875, -0.34084985)
-
-[sub_resource type="Resource" id="Resource_bumper_mid_left"]
-script = ExtResource("2_anchor")
-anchor_id = &"bumper_mid_left"
-board_position = Vector2(-0.13108146, -0.20189366)
-
-[sub_resource type="Resource" id="Resource_bumper_mid_right"]
-script = ExtResource("2_anchor")
-anchor_id = &"bumper_mid_right"
-board_position = Vector2(0.1349936, -0.205827)
+board_position = Vector2(0.10650017, -0.010588899)
 
 [sub_resource type="Resource" id="Resource_flipper_left"]
 script = ExtResource("2_anchor")
 anchor_id = &"flipper_left"
 anchor_type = "flipper"
-board_position = Vector2(-0.1107364, 0.5)
+board_position = Vector2(-0.1710706, 0.35744822)
 rotation_degrees = 75.0
 snap_to_boundary = true
-boundary_edge_index = 2
-boundary_edge_offset = 0.6410439834133611
+boundary_edge_index = 3
+boundary_edge_offset = 0.22984302169262194
 
 [sub_resource type="Resource" id="Resource_flipper_right"]
 script = ExtResource("2_anchor")
 anchor_id = &"flipper_right"
 anchor_type = "flipper"
-board_position = Vector2(0.12251848, 0.5)
+board_position = Vector2(0.03676167, 0.41996387)
 rotation_degrees = -72.0
 snap_to_boundary = true
 boundary_edge_index = 2
-boundary_edge_offset = 0.3710176905616682
+boundary_edge_offset = 0.808576435260245
 
 [sub_resource type="Resource" id="Resource_relic_left"]
 script = ExtResource("2_anchor")
@@ -70,61 +60,34 @@ board_position = Vector2(-0.18, 0.12)
 script = ExtResource("2_anchor")
 anchor_id = &"relic_center"
 anchor_type = "relic_slot"
-board_position = Vector2(0, 0.18)
+board_position = Vector2(-0.029200938, 0.16368845)
 
 [sub_resource type="Resource" id="Resource_relic_right"]
 script = ExtResource("2_anchor")
 anchor_id = &"relic_right"
 anchor_type = "relic_slot"
-board_position = Vector2(0.18, 0.12)
+board_position = Vector2(0.26978084, 0.11032818)
 
 [sub_resource type="Resource" id="Resource_object_left"]
 script = ExtResource("2_anchor")
 anchor_id = &"object_left"
 anchor_type = "object"
-board_position = Vector2(-0.42, -0.02)
+board_position = Vector2(-0.2778862, -0.034969784)
 rotation_degrees = 90.0
 
 [sub_resource type="Resource" id="Resource_object_right"]
 script = ExtResource("2_anchor")
 anchor_id = &"object_right"
 anchor_type = "object"
-board_position = Vector2(0.42, -0.02)
+board_position = Vector2(0.14001417, 0.14894944)
 rotation_degrees = 90.0
-
-[sub_resource type="Resource" id="Resource_2w5q2"]
-script = ExtResource("2_anchor")
-anchor_id = &"bumper_01"
-board_position = Vector2(0.24178588, -0.066475056)
-
-[sub_resource type="Resource" id="Resource_1cphp"]
-script = ExtResource("2_anchor")
-anchor_id = &"bumper_02"
-board_position = Vector2(-0.20208251, -0.04652615)
-
-[sub_resource type="Resource" id="Resource_4o0iy"]
-script = ExtResource("2_anchor")
-anchor_id = &"bumper_03"
-board_position = Vector2(-0.33719462, -0.111426465)
-
-[sub_resource type="Resource" id="Resource_5n28j"]
-script = ExtResource("2_anchor")
-anchor_id = &"object_01"
-anchor_type = "object"
-board_position = Vector2(0.06061751, -0.05150597)
-
-[sub_resource type="Resource" id="Resource_wtqkj"]
-script = ExtResource("2_anchor")
-anchor_id = &"object_02"
-anchor_type = "object"
-board_position = Vector2(0.29973918, 0.23659536)
 
 [sub_resource type="Resource" id="Resource_1ro65"]
 script = ExtResource("2_anchor")
 anchor_id = &"bumper_04"
-board_position = Vector2(0.14262323, -0.3835736)
+board_position = Vector2(0.27443624, -0.045524947)
 
 [resource]
 script = ExtResource("1_layout")
-boundary_points = PackedVector2Array(-0.4980414, -0.49099523, 0.5, -0.5, 0.4430121, 0.5, -0.42081085, 0.5)
-anchors = Array[ExtResource("2_anchor")]([SubResource("Resource_launch"), SubResource("Resource_drain"), SubResource("Resource_bumper_top_left"), SubResource("Resource_bumper_top"), SubResource("Resource_bumper_top_right"), SubResource("Resource_bumper_mid_left"), SubResource("Resource_bumper_mid_right"), SubResource("Resource_flipper_left"), SubResource("Resource_flipper_right"), SubResource("Resource_relic_left"), SubResource("Resource_relic_center"), SubResource("Resource_relic_right"), SubResource("Resource_object_left"), SubResource("Resource_object_right"), SubResource("Resource_2w5q2"), SubResource("Resource_1cphp"), SubResource("Resource_4o0iy"), SubResource("Resource_5n28j"), SubResource("Resource_wtqkj"), SubResource("Resource_1ro65")])
+boundary_points = PackedVector2Array(-0.5, -0.12021364, 0.09266601, -0.5, 0.5, 0.08188986, -0.07290604, 0.5)
+anchors = Array[ExtResource("2_anchor")]([SubResource("Resource_launch"), SubResource("Resource_drain"), SubResource("Resource_bumper_top_left"), SubResource("Resource_bumper_top"), SubResource("Resource_bumper_top_right"), SubResource("Resource_flipper_left"), SubResource("Resource_flipper_right"), SubResource("Resource_relic_left"), SubResource("Resource_relic_center"), SubResource("Resource_relic_right"), SubResource("Resource_object_left"), SubResource("Resource_object_right"), SubResource("Resource_1ro65")])

@@ -23,18 +23,6 @@ point_id = &"bumper_top_right"
 content_id = &"bumper_normal"
 track_point_ids = PackedStringArray()
 
-[sub_resource type="Resource" id="Resource_qf0ru"]
-script = ExtResource("2_assignment")
-point_id = &"bumper_mid_left"
-content_id = &"bumper_normal"
-track_point_ids = PackedStringArray()
-
-[sub_resource type="Resource" id="Assignment_bumper_mid_right"]
-script = ExtResource("2_assignment")
-point_id = &"bumper_mid_right"
-content_id = &"bumper_normal"
-track_point_ids = PackedStringArray()
-
 [sub_resource type="Resource" id="Resource_5u0l1"]
 script = ExtResource("2_assignment")
 point_id = &"flipper_left"
@@ -79,5 +67,5 @@ right_point_id = &"flipper_right"
 [resource]
 script = ExtResource("1_composition")
 layout_config = ExtResource("3_layout")
-assignments = Array[ExtResource("2_assignment")]([SubResource("Assignment_bumper_top_left"), SubResource("Assignment_bumper_top"), SubResource("Assignment_bumper_top_right"), SubResource("Resource_qf0ru"), SubResource("Assignment_bumper_mid_right"), SubResource("Resource_5u0l1"), SubResource("Resource_jpuvd"), SubResource("Assignment_relic_center"), SubResource("Resource_5jpt3"), SubResource("Assignment_object_right"), SubResource("Resource_03ugk")])
+assignments = Array[ExtResource("2_assignment")]([SubResource("Assignment_bumper_top_left"), SubResource("Assignment_bumper_top"), SubResource("Assignment_bumper_top_right"), SubResource("Resource_5u0l1"), SubResource("Resource_jpuvd"), SubResource("Assignment_relic_center"), SubResource("Resource_5jpt3"), SubResource("Assignment_object_right"), SubResource("Resource_03ugk")])
 flipper_control_targets = Array[ExtResource("4_control")]([SubResource("ControlTarget_bottom_pair")])
