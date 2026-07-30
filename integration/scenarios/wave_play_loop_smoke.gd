@@ -20,12 +20,23 @@ func _run() -> void:
 	var router := screen.get_node("WaveInputRouter") as WaveInputRouter
 	var board := screen.get_node("PlayableBoard2D") as PlayableBoard2D
 	board.bumper_hit_applied.connect(_bumper_hit_results.append)
+	var parry_feedback := screen.get_node(
+		"Overlay/RightPanel/Content/ParryFeedback"
+	) as Label
+	var parry_feedback_timer := screen.get_node("ParryFeedbackTimer") as Timer
 	_expect(
 		screen.get_remaining_ball_count() == 3,
 		"기본 웨이브에 공 세 개가 준비되지 않았습니다: %s / %s" % [
 			board.get_validation_errors(),
 			(screen.get_node("Overlay/Status") as Label).text,
 		]
+	)
+	_expect(not parry_feedback.visible, "웨이브 시작 전에 패링 피드백이 표시됐습니다.")
+	_expect(
+		parry_feedback_timer.one_shot
+		and is_equal_approx(parry_feedback_timer.wait_time, 0.4)
+		and not parry_feedback_timer.autostart,
+		"패링 피드백 타이머가 0.4초 단발·수동 시작 설정이 아닙니다."
 	)
 	_expect(
 		WavePlayScreen.DEFAULT_FLIPPER_DIRECTION_PRIORITY == [
@@ -132,12 +143,48 @@ func _run() -> void:
 				screen._refresh_hud()
 		router._unhandled_input(_key_event(KEY_SPACE))
 		_expect(screen.get_shot_phase() == ShotPhases.IN_PLAY, "두 번째 Space로 공을 발사하지 못했습니다.")
+		if expected_remaining == 2:
+			var active_shot_id := screen.get_active_shot_id()
+			board.flipper_parry_applied.emit(
+				&"feedback_action_001",
+				&"flipper_left",
+				active_shot_id
+			)
+			_expect(
+				parry_feedback.visible and parry_feedback.text == "PARRY!",
+				"현재 발사의 패링 성공이 PARRY! 피드백을 표시하지 않았습니다."
+			)
+			await create_timer(0.25).timeout
+			board.flipper_parry_applied.emit(
+				&"feedback_action_002",
+				&"flipper_right",
+				active_shot_id
+			)
+			await create_timer(0.2).timeout
+			_expect(
+				parry_feedback.visible,
+				"연속 패링이 마지막 패링 기준으로 표시 시간을 갱신하지 않았습니다."
+			)
+			await create_timer(0.25).timeout
+			_expect(
+				not parry_feedback.visible,
+				"마지막 패링 뒤 0.4초가 지나도 패링 피드백이 숨겨지지 않았습니다."
+			)
 		if expected_remaining == 1 and _previous_shot_id != &"":
 			var score_before_delayed_hit := screen.get_current_score()
 			screen._on_bumper_hit_applied(_make_delayed_hit(_previous_shot_id))
 			_expect(
 				screen.get_current_score() == score_before_delayed_hit,
 				"다음 공 진행 중 이전 발사의 지연 타격이 스코어에 반영됐습니다."
+			)
+			board.flipper_parry_applied.emit(
+				&"delayed_parry",
+				&"flipper_left",
+				_previous_shot_id
+			)
+			_expect(
+				not parry_feedback.visible,
+				"다음 공 진행 중 이전 발사의 지연 패링이 피드백을 표시했습니다."
 			)
 		_expect(
 			screen.get_selected_flipper_direction() == &"down"

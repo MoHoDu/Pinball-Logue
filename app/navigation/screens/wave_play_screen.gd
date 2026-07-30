@@ -9,6 +9,7 @@ const DEFAULT_FLIPPER_DIRECTION_PRIORITY: Array[StringName] = [
 	&"right",
 	&"up",
 ]
+const PARRY_FEEDBACK_SECONDS := 0.4
 
 @export var ball_loadout: WaveBallLoadoutConfig
 @export var launch_config: LaunchConfig
@@ -24,8 +25,10 @@ const DEFAULT_FLIPPER_DIRECTION_PRIORITY: Array[StringName] = [
 @export_node_path("Label") var strength_label_path := NodePath("Overlay/RightPanel/Content/Strength")
 @export_node_path("Label") var flipper_label_path := NodePath("Overlay/RightPanel/Content/Flipper")
 @export_node_path("Label") var controls_label_path := NodePath("Overlay/RightPanel/Content/Controls")
+@export_node_path("Label") var parry_feedback_label_path := NodePath("Overlay/RightPanel/Content/ParryFeedback")
 @export_node_path("Label") var status_label_path := NodePath("Overlay/Status")
 @export_node_path("Line2D") var aim_guide_path := NodePath("PlayableBoard2D/AimGuide")
+@export_node_path("Timer") var parry_feedback_timer_path := NodePath("ParryFeedbackTimer")
 
 var _board: PlayableBoard2D
 var _input_router: WaveInputRouter
@@ -37,8 +40,10 @@ var _aim_label: Label
 var _strength_label: Label
 var _flipper_label: Label
 var _controls_label: Label
+var _parry_feedback_label: Label
 var _status_label: Label
 var _aim_guide: Line2D
+var _parry_feedback_timer: Timer
 
 var _inventory := WaveBallInventory.new()
 var _shot_controller := ShotController.new()
@@ -83,13 +88,17 @@ func _resolve_nodes() -> void:
 	_strength_label = get_node_or_null(strength_label_path) as Label
 	_flipper_label = get_node_or_null(flipper_label_path) as Label
 	_controls_label = get_node_or_null(controls_label_path) as Label
+	_parry_feedback_label = get_node_or_null(parry_feedback_label_path) as Label
 	_status_label = get_node_or_null(status_label_path) as Label
 	_aim_guide = get_node_or_null(aim_guide_path) as Line2D
+	_parry_feedback_timer = get_node_or_null(parry_feedback_timer_path) as Timer
 
 
 func _setup_play_screen() -> String:
 	if _board == null or _input_router == null:
 		return "플레이 보드 또는 입력 라우터가 연결되지 않았습니다."
+	if _parry_feedback_label == null or _parry_feedback_timer == null:
+		return "패링 피드백 라벨 또는 타이머가 연결되지 않았습니다."
 	if ball_loadout == null or launch_config == null:
 		return "웨이브 공 목록 또는 발사 설정이 연결되지 않았습니다."
 	if score_config == null or score_objective == null:
@@ -135,6 +144,8 @@ func _connect_inputs() -> void:
 	_input_router.flipper_action_requested.connect(_on_flipper_action_requested)
 	_board.ball_exit_detected.connect(_on_ball_exit_detected)
 	_board.bumper_hit_applied.connect(_on_bumper_hit_applied)
+	_board.flipper_parry_applied.connect(_on_flipper_parry_applied)
+	_parry_feedback_timer.timeout.connect(_on_parry_feedback_timeout)
 
 
 func _process(_delta: float) -> void:
@@ -326,6 +337,25 @@ func _on_flipper_action_requested() -> void:
 		_show_status(action_error)
 		return
 	_show_status("%s을(를) 작동했습니다. 자동으로 원래 위치로 돌아옵니다." % _get_flipper_target_label(_selected_flipper_target))
+
+
+func _on_flipper_parry_applied(
+	_action_id: StringName,
+	_anchor_id: StringName,
+	shot_id: StringName
+) -> void:
+	if (
+		_shot_controller.current_phase != ShotPhases.IN_PLAY
+		or shot_id != _shot_controller.get_active_shot_id()
+	):
+		return
+	_parry_feedback_label.text = "PARRY!"
+	_parry_feedback_label.visible = true
+	_parry_feedback_timer.start(PARRY_FEEDBACK_SECONDS)
+
+
+func _on_parry_feedback_timeout() -> void:
+	_parry_feedback_label.visible = false
 
 
 func _on_ball_exit_detected(shot_id: StringName, end_reason: StringName) -> void:

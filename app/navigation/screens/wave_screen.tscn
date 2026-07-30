@@ -95,6 +95,14 @@ text = "1·2·3: 공 선택
 방향키: 남은 공 이동
 Space: 선택 확정"
 
+[node name="ParryFeedback" type="Label" parent="Overlay/RightPanel/Content"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.87, 0.36, 1)
+theme_override_font_sizes/font_size = 28
+text = "PARRY!"
+horizontal_alignment = 1
+
 [node name="Status" type="Label" parent="Overlay" unique_id=1256639415]
 offset_left = 340.0
 offset_top = 672.0
@@ -105,3 +113,8 @@ theme_override_colors/font_color = Color(0.95, 0.87, 0.36, 1)
 theme_override_font_sizes/font_size = 18
 text = "발사할 공을 고른 뒤 Space로 선택을 확정하세요."
 horizontal_alignment = 1
+
+[node name="ParryFeedbackTimer" type="Timer" parent="."]
+wait_time = 0.4
+one_shot = true
+autostart = false

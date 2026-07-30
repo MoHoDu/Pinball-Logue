@@ -5,6 +5,10 @@ const BALL_SCENE := preload("res://pinball/ball/ball_2d.tscn")
 const BALL_PROFILE := preload("res://pinball/ball/standard_ball_physics_profile.tres")
 
 var _failures := PackedStringArray()
+var _parry_applied_count := 0
+var _last_parry_action_id: StringName = &""
+var _last_parry_anchor_id: StringName = &""
+var _last_parry_shot_id: StringName = &""
 
 
 func _init() -> void:
@@ -19,6 +23,7 @@ func _run() -> void:
 		func(_world_position: Vector2, world_velocity: Vector2) -> Vector2: return world_velocity
 	)
 	_expect(configure_error.is_empty(), "2D 플리퍼 어댑터 좌표 변환을 설정하지 못했습니다: %s" % configure_error)
+	adapter.parry_applied.connect(_on_parry_applied)
 
 	var profile := FlipperMotionProfile.new()
 	profile.activation_seconds = 0.1
@@ -89,8 +94,16 @@ func _run() -> void:
 		first_parry_velocity.length() <= BALL_PROFILE.max_linear_speed_board_per_second + 0.0001,
 		"공 패링이 공 최대 속도를 넘었습니다: %.6f" % first_parry_velocity.length()
 	)
+	_expect(_parry_applied_count == 1, "실제 공 패링이 패링 적용 신호를 정확히 한 번 만들지 않았습니다.")
+	_expect(
+		_last_parry_action_id == &"pair_action_001"
+		and _last_parry_anchor_id == &"flipper_left"
+		and _last_parry_shot_id == &"shot_001",
+		"패링 적용 신호의 작동·플리퍼·발사 식별자가 실제 접촉과 일치하지 않습니다."
+	)
 	adapter._on_parry_contact(&"pair_action_001", right.anchor_id, ball, Vector2.LEFT, 5.0, 5.0)
 	_expect(ball.linear_velocity.is_equal_approx(first_parry_velocity), "좌우 쌍 한 번의 작동에 패링 힘이 중복 적용됐습니다.")
+	_expect(_parry_applied_count == 1, "좌우 쌍 한 번의 작동에 패링 적용 신호가 중복 발생했습니다.")
 
 	adapter.physics_tick(0.25)
 	_expect(not left.is_action_active() and not right.is_action_active(), "좌우 플리퍼가 설정 시간 뒤 자동 복귀하지 않았습니다.")
@@ -141,6 +154,17 @@ func _run() -> void:
 	ball.queue_free()
 	top_left.queue_free()
 	_finish()
+
+
+func _on_parry_applied(
+	action_id: StringName,
+	anchor_id: StringName,
+	shot_id: StringName
+) -> void:
+	_parry_applied_count += 1
+	_last_parry_action_id = action_id
+	_last_parry_anchor_id = anchor_id
+	_last_parry_shot_id = shot_id
 
 
 func _make_flipper(
